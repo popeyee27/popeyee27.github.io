@@ -7,6 +7,7 @@ import sys
 import ssl
 import os
 import time
+from datetime import datetime, timedelta
 
 output_file = sys.argv[1] if len(sys.argv) > 1 else 'cleaned_water_level.csv'
 
@@ -28,6 +29,18 @@ def format_thai_dt_from_iso(iso_str):
     year_be = int(y) + 543
     return f"{d}/{m}/{year_be} {time_part}"
 
+def parse_thai_dt(dt_str):
+    try:
+        parts = dt_str.strip().split(' ')
+        d, m, y = [int(x) for x in parts[0].split('/')]
+        if y > 2500:
+            y -= 543
+        hr, mn = [int(x) for x in parts[1].split(':')]
+        return datetime(y, m, d, hr, mn)
+    except Exception:
+        return None
+
+all_rows = []
 existing_data = set()
 file_exists = os.path.exists(output_file)
 if file_exists:
@@ -38,9 +51,11 @@ if file_exists:
         except StopIteration:
             pass
         for row in reader:
-            if len(row) >= 2:
+            if len(row) >= 3:
                 canal_name = row[0].strip()
                 dt = row[1].strip()
+                val = row[2].strip()
+                all_rows.append((canal_name, dt, val))
                 existing_data.add((canal_name, dt))
 
 ctx = ssl.create_default_context()
@@ -123,7 +138,7 @@ for station_id, canal_name in BMA_STATIONS:
     if rows:
         for cname, dt, val in rows:
             if (cname, dt) not in existing_data:
-                new_data.append([cname, dt, val])
+                new_data.append((cname, dt, val))
                 existing_data.add((cname, dt))
     else:
         print(f"[{canal_name}] All BMA attempts failed (403 or error). Will use backup source.")
@@ -133,16 +148,41 @@ if len(new_data) == 0:
     backup_rows = fetch_thaiwater_backup()
     for cname, dt, val in backup_rows:
         if (cname, dt) not in existing_data:
-            new_data.append([cname, dt, val])
+            new_data.append((cname, dt, val))
             existing_data.add((cname, dt))
 
-if new_data:
-    mode = 'a' if file_exists else 'w'
-    with open(output_file, mode, newline='', encoding='utf-8-sig') as f:
+print(f"Found {len(new_data)} new data points to add.")
+
+# Combine existing and new data
+for item in new_data:
+    all_rows.append(item)
+
+# Deduplicate
+unique_dict = {}
+for canal_name, dt, val in all_rows:
+    unique_dict[(canal_name, dt)] = val
+
+combined_rows = []
+for (canal_name, dt), val in unique_dict.items():
+    p_dt = parse_thai_dt(dt)
+    if p_dt:
+        combined_rows.append((p_dt, canal_name, dt, val))
+
+if combined_rows:
+    max_dt = max(r[0] for r in combined_rows)
+    cutoff_dt = max_dt - timedelta(days=3)
+    
+    # Filter to last 3 days
+    recent_rows = [r for r in combined_rows if r[0] >= cutoff_dt]
+    # Sort chronologically
+    recent_rows.sort(key=lambda r: (r[0], r[1]))
+    
+    with open(output_file, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
-        if not file_exists or os.path.getsize(output_file) == 0:
-            writer.writerow(['คลอง', 'วัน-เวลา', 'ระดับน้ำด้านใน ม.รทก.'])
-        writer.writerows(new_data)
-    print(f"Successfully appended {len(new_data)} new rows to {output_file}")
+        writer.writerow(['คลอง', 'วัน-เวลา', 'ระดับน้ำด้านใน ม.รทก.'])
+        for _, canal_name, dt, val in recent_rows:
+            writer.writerow([canal_name, dt, val])
+            
+    print(f"Data saved to {output_file}. Kept {len(recent_rows)} rows (last 3 days from {cutoff_dt.strftime('%d/%m/%Y %H:%M')} to {max_dt.strftime('%d/%m/%Y %H:%M')}).")
 else:
-    print("No new rows to append. Data is up to date.")
+    print("No valid rows found.")
