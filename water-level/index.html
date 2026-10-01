@@ -744,12 +744,42 @@
         color: black;
       }
     }
+  
+    /* Animations */
+    .stat-card, .vcard, .legend-item {
+      transition: all 0.3s ease !important;
+    }
+    .stat-card:hover, .vcard:hover {
+      transform: translateY(-5px) scale(1.02) !important;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
+    }
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+      opacity: 0;
+    }
+    .animate-slide-up {
+      animation: slideUp 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .delay-1 { animation-delay: 0.2s; }
+    .delay-2 { animation-delay: 0.4s; }
+    .delay-3 { animation-delay: 0.6s; }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
   <div class="container" id="reportArea">
     <!-- Header -->
-    <header>
+    <header class="animate-fade-in">
       <div class="header-info">
         <h1>
           🌊 ระบบติดตามและคาดการณ์สถานการณ์น้ำ: คลองสองต้นนุ่น
@@ -758,7 +788,7 @@
             สถานะ: กำลังระบายน้ำต่อเนื่อง (-5.5 ซม./วัน)
           </span>
         </h1>
-        <p>สถานี: ค.สองต้นนุ่น ซ.ร่มเกล้า 20 | ประมวลผลจากข้อมูล 23 - 30 ก.ย. 2569 สู่การคาดการณ์เดือน ต.ค. 2569</p>
+        <p>สถานี: ค.สองต้นนุ่น ซ.ร่มเกล้า 20 | ข้อมูลล่าสุด: <span id="lastUpdatedText" style="color:var(--accent-blue); font-weight:bold;">กำลังโหลด...</span></p>
       </div>
 
       <div class="btn-group">
@@ -836,7 +866,8 @@
 
     <!-- SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (อันดับ 2: วางอยู่เหนือกราฟตามคำขอเป๊ะ) -->
     <!-- SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (VISUAL FIRST - รูปภาพนำ ตัวหนังสือน้อย ไม่ลายตา) -->
-    <div class="infographic-section" id="vehicleInfographic">
+    <!-- SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (VISUAL FIRST - รูปภาพนำ ตัวหนังสือน้อย ไม่ลายตา) -->
+    <div class="infographic-section animate-slide-up delay-2" id="vehicleInfographic">
       <div class="infographic-header">
         <div class="infographic-title">
           <h2>🚗 ภาพอินโฟกราฟิก: ความสามารถในการลุยน้ำของรถยอดนิยมในไทย</h2>
@@ -1004,7 +1035,7 @@
         </div>
       </div>
 
-      <div class="chart-container">
+      <div class="chart-container animate-slide-up delay-3">
         <canvas id="waterChart"></canvas>
       </div>
 
@@ -1247,7 +1278,7 @@
         ctx.fillText('✅ โซนปกติวันแรก (0.08 - 0.20 ม.)', right - 12, y20 + 20);
 
         // Vertical Divider line for "ข้อมูลล่าสุด (30 ก.ย.)"
-        const xNow = x.getPixelForValue('30 ก.ย. (ล่าสุด 0.84m)');
+        const xNow = x.getPixelForValue(chart.data.labels.find(l => typeof l === 'string' && l.includes('(ล่าสุด')));
         if (xNow && xNow >= left && xNow <= right) {
           ctx.setLineDash([4, 4]);
           ctx.strokeStyle = '#94a3b8';
@@ -1270,40 +1301,168 @@
       }
     };
 
-    // Chart Data Setup
-    const labels = [
-      '23 ก.ย. (วันแรก)', '24 ก.ย.', '25 ก.ย.', '26 ก.ย.', '27 ก.ย.', 
-      '28 ก.ย. (สูงสุด 0.98m)', '29 ก.ย.', '30 ก.ย. (ล่าสุด 0.84m)',
-      '01 ต.ค. (CX-5 ผ่านสบาย 0.80m)', '03 ต.ค. (เก๋งผ่านสบาย 0.70m)', '05 ต.ค.', 
-      '07 ต.ค. (ท่อไม่อั้น 0.50m)', '08 ต.ค. (ปลอดภัย 0.40m)', 
-      '10 ต.ค.', '12 ต.ค.', '13 ต.ค. (ปกติวันแรก 0.14m)', '14 ต.ค.'
-    ];
+    
+    // Dynamically fetch and parse CSV
+    
+    // Dynamically fetch and parse CSV
+    Papa.parse('cleaned_water_level.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const data = results.data;
+        if(data.length === 0) return;
+        
+        const dailyData = {};
+        let latestDateStr = '';
+        let latestTimeStr = '';
+        let latestVal = 0;
+        let maxVal = -999;
+        let maxDateStr = '';
+        let previousDayVal = null;
+        
+        data.forEach(row => {
+            const dt = row['วัน-เวลา'];
+            const val = parseFloat(row['ระดับน้ำด้านใน ม.รทก.']);
+            if(!dt || isNaN(val)) return;
+            
+            const parts = dt.split(' ');
+            const dateStr = parts[0];
+            const timeStr = parts[1];
+            
+            if (!dailyData[dateStr]) dailyData[dateStr] = val;
+            else dailyData[dateStr] = Math.max(dailyData[dateStr], val);
+            
+            if (val > maxVal) {
+                maxVal = val;
+                maxDateStr = dateStr;
+            }
+            
+            latestDateStr = dateStr;
+            latestTimeStr = timeStr;
+            latestVal = val;
+        });
+        
+        document.getElementById('lastUpdatedText').innerText = latestDateStr + ' ' + latestTimeStr;
+        
+        const dates = Object.keys(dailyData).sort((a,b) => {
+            const [d1,m1,y1] = a.split('/');
+            const [d2,m2,y2] = b.split('/');
+            return new Date(`${y1}-${m1}-${d1}`) - new Date(`${y2}-${m2}-${d2}`);
+        });
+        
+        // Calculate dynamic drop rate based on last 2 days (or default to 5.5cm/day)
+        let dropRateMeters = 0.055; // default 5.5 cm/day
+        if (dates.length >= 2) {
+            let lastDay = dailyData[dates[dates.length-1]];
+            let prevDay = dailyData[dates[dates.length-2]];
+            if (prevDay > lastDay) {
+                dropRateMeters = prevDay - lastDay;
+                if (dropRateMeters < 0.01) dropRateMeters = 0.055; // fallback if too small
+            }
+        }
+        const dropRateCm = (dropRateMeters * 100).toFixed(1);
+        const cmPerHour = (dropRateCm / 24).toFixed(2);
+        
+        // Update Pills
+        const pills = document.querySelectorAll('.chart-pill');
+        if (pills.length >= 3) {
+            pills[0].innerHTML = `🔴 สูงสุด: <strong>${maxVal.toFixed(2)} ม. (${maxDateStr.substring(0,5)})</strong>`;
+            pills[1].innerHTML = `📉 อัตราลดลง: <strong>-${dropRateCm} ซม./วัน</strong>`;
+        }
+        
+        // Update Context Card
+        const contextCard = document.querySelector('.context-card p');
+        if (contextCard) {
+            contextCard.innerText = `ระดับน้ำลดลงวันละ ${dropRateCm} ซม. (${cmPerHour} ซม./ชม.) คาดการณ์จากข้อมูลล่าสุด ${latestDateStr}`;
+        }
+        
+        // Parse current date to calculate forecast milestones
+        const [curD, curM, curY] = latestDateStr.split('/').map(Number);
+        const curDateObj = new Date(`${curY-543}-${curM}-${curD} ${latestTimeStr}`);
+        
+        // Update Milestone Table
+        const rows = document.querySelectorAll('#milestoneTable tbody tr');
+        rows.forEach(row => {
+            const tdLevel = row.querySelector('td:nth-child(1) strong');
+            if (!tdLevel) return;
+            const targetLevel = parseFloat(tdLevel.innerText);
+            
+            const tdDays = row.querySelector('td:nth-child(3) strong');
+            const tdDate = row.querySelector('td:nth-child(4)');
+            
+            if (targetLevel >= latestVal) {
+                if(tdDays) tdDays.innerHTML = `<span style="color:#10b981">พ้นแล้ว</span>`;
+                if(tdDate) tdDate.innerText = '-';
+            } else {
+                const daysNeeded = (latestVal - targetLevel) / dropRateMeters;
+                const hoursNeeded = daysNeeded * 24;
+                
+                let targetDate = new Date(curDateObj.getTime() + hoursNeeded * 60 * 60 * 1000);
+                
+                if (tdDays) tdDays.innerText = `+${daysNeeded.toFixed(1)} วัน`;
+                
+                const mNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                if (tdDate) tdDate.innerText = `${targetDate.getDate().toString().padStart(2,'0')} ${mNames[targetDate.getMonth()]} ${targetDate.getFullYear()+543} เวลา ${targetDate.getHours().toString().padStart(2,'0')}:${targetDate.getMinutes().toString().padStart(2,'0')} น.`;
+                
+                // Update final pill for return to normal if level is 0.14
+                if (Math.abs(targetLevel - 0.14) < 0.01 && pills.length >= 3) {
+                    pills[2].innerHTML = `🎯 กลับสู่ปกติ: <strong>${targetDate.getDate()} ${mNames[targetDate.getMonth()]} (อีก ${daysNeeded.toFixed(1)} วัน)</strong>`;
+                }
+            }
+        });
+        
+        // Graph Variables
+        const labels = [];
+        const historicalData = [];
+        const forecastData = [];
+        const normalLine = [];
+        
+        dates.forEach(d => {
+            labels.push(d.substring(0, 5)); 
+            historicalData.push(dailyData[d]);
+            forecastData.push(null);
+            normalLine.push(0.14);
+        });
+        
+        // Ensure 'Now' vertical line works: Update the label format expected by riskZonesPlugin
+        labels[labels.length-1] = `${dates[dates.length-1].substring(0,5)} (ล่าสุด ${latestVal.toFixed(2)}m)`;
+        
+        forecastData[forecastData.length - 1] = latestVal;
+        
+        // Generate forecast 
+        // Generate forecast
+        let currentForecast = latestVal;
+        let [ld, lm, ly] = dates[dates.length-1].split('/').map(Number);
+        let forecastDate = new Date(`${ly-543}-${lm}-${ld}`); // Rough JS date
+        
+        for(let i=0; i<7; i++) {
+            forecastDate.setDate(forecastDate.getDate() + 1);
+            currentForecast -= 0.05;
+            if (currentForecast < 0.14) currentForecast = 0.14;
+            
+            const fdStr = String(forecastDate.getDate()).padStart(2, '0') + '/' + String(forecastDate.getMonth()+1).padStart(2, '0');
+            labels.push(fdStr + ' (คาดการณ์)');
+            historicalData.push(null);
+            forecastData.push(parseFloat(currentForecast.toFixed(2)));
+            normalLine.push(0.14);
+            
+            if (currentForecast <= 0.14) break;
+        }
 
-    // Historical water levels
-    const historicalData = [
-      0.14, 0.08, 0.20, 0.77, 0.96, 
-      0.98, 0.95, 0.84,
-      null, null, null, null, null, null, null, null, null
-    ];
 
-    // Seamless continuous forecast line starting at 30/09 (0.84m)
-    const forecastData = [
-      null, null, null, null, null, 
-      null, null, 0.84,
-      0.80, 0.70, 0.60, 0.50, 0.40, 
-      0.30, 0.20, 0.14, 0.08
-    ];
 
-    const normalLine = Array(labels.length).fill(0.14);
+    
+        const ctx = document.getElementById('waterChart').getContext('2d');
+        if (window.myChart) window.myChart.destroy();
+        window.myChart = new Chart(ctx, {
 
-    const ctx = document.getElementById('waterChart').getContext('2d');
-    const myChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: labels,
         datasets: [
           {
-            label: 'ระดับน้ำจริงที่บันทึก (23-30 ก.ย.)',
+            label: 'ระดับน้ำจริงที่บันทึก',
             data: historicalData,
             borderColor: '#38bdf8',
             backgroundColor: 'rgba(56, 189, 248, 0.15)',
