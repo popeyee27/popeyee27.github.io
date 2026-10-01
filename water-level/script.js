@@ -50,22 +50,25 @@ function selectStation(stationName) {
     };
     
     Object.keys(nodes).forEach(key => {
-        const btn = document.getElementById(nodes[key]);
-        if (!btn) return;
-        const circle = btn.querySelector('.node-circle');
-        const text = btn.querySelector('.node-text');
-        
-        if (key === stationName) {
-            circle.classList.remove('border-slate-300');
-            circle.classList.add('border-blue-600', 'scale-110');
-            circle.querySelector('span').classList.replace('text-slate-500', 'text-blue-600');
-            text.classList.replace('text-slate-500', 'text-blue-700');
-        } else {
-            circle.classList.add('border-slate-300');
-            circle.classList.remove('border-blue-600', 'scale-110');
-            circle.querySelector('span').classList.replace('text-blue-600', 'text-slate-500');
-            text.classList.replace('text-blue-700', 'text-slate-500');
-        }
+        const btns = document.querySelectorAll('.' + nodes[key]);
+        btns.forEach(btn => {
+            const circle = btn.querySelector('.node-circle');
+            const text = btn.querySelector('.node-text');
+            
+            if (key === stationName) {
+                circle.classList.remove('border-slate-300');
+                circle.classList.add('border-blue-600', 'scale-110');
+                circle.querySelector('span').classList.replace('text-slate-500', 'text-blue-600');
+                text.classList.replace('text-slate-600', 'text-blue-700');
+                text.classList.replace('text-slate-500', 'text-blue-700');
+            } else {
+                circle.classList.add('border-slate-300');
+                circle.classList.remove('border-blue-600', 'scale-110');
+                circle.querySelector('span').classList.replace('text-blue-600', 'text-slate-500');
+                text.classList.replace('text-blue-700', 'text-slate-600');
+                text.classList.replace('text-blue-700', 'text-slate-500');
+            }
+        });
     });
     
     renderStation(stationName);
