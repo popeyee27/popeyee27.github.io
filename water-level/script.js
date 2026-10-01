@@ -244,12 +244,13 @@ function updateWarningBanner(stationName) {
     const trend = getTrend(stationName);
     if (trend.status === 'up') {
         banner.innerHTML = `<div class="bg-red-500 text-white p-3 rounded-xl shadow-sm text-sm font-bold flex items-center justify-center gap-2 mb-4 animate-pulse">
-            <span class="text-xl">⚠️</span> แจ้งเตือน: ระดับน้ำที่สถานีนี้กำลังเพิ่มขึ้น ${trend.text.replace('กำลังเพิ่มขึ้น ', '')}
+            <span class="text-xl">⚠️</span> แจ้งเตือน: ระดับน้ำที่สถานีนี้กำลังเพิ่มขึ้น ${trend.text.replace('เพิ่มขึ้น ', '')}
         </div>`;
         banner.classList.remove('hidden');
-    } else if (trend.status === 'down') {
-        banner.innerHTML = `<div class="bg-blue-500 text-white p-3 rounded-xl shadow-sm text-sm font-bold flex items-center justify-center gap-2 mb-4">
-            <span class="text-xl">🌊</span> สถานการณ์ดี: ระดับน้ำที่สถานีนี้กำลังลดลงอย่างรวดเร็ว ${trend.text.replace('กำลังลดลง ', '')}
+    } else if (trend.diff <= -0.01) {
+        const colorClass = trend.diff <= -0.05 ? 'bg-green-500' : (trend.diff <= -0.03 ? 'bg-blue-500' : 'bg-yellow-500 text-slate-800');
+        banner.innerHTML = `<div class="${colorClass} p-3 rounded-xl shadow-sm text-sm font-bold flex items-center justify-center gap-2 mb-4">
+            <span class="text-xl">🌊</span> สถานการณ์ดี: ระดับน้ำที่สถานีนี้${trend.text}
         </div>`;
         banner.classList.remove('hidden');
     } else {
@@ -261,15 +262,17 @@ function updateWarningBanner(stationName) {
 function getTrend(stationName) {
     const data = allStationsData[stationName] || [];
     const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
-    if(validData.length < 2) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0 };
+    if(validData.length < 4) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0 };
     
-    // Compare latest vs previous record (10-15 mins ago)
+    // Compare latest vs 30 mins ago (4 records ago)
     const latest = parseFloat(validData[validData.length - 1]['ระดับน้ำด้านใน ม.รทก.']);
-    const old = parseFloat(validData[validData.length - 2]['ระดับน้ำด้านใน ม.รทก.']); // previous record
+    const old = parseFloat(validData[validData.length - 4]['ระดับน้ำด้านใน ม.รทก.']); 
     
     const diff = latest - old;
-    if (diff <= -0.02) return { status: 'down', text: `กำลังลดลง (${diff.toFixed(2)} ม.)`, diff: diff };
-    if (diff >= 0.02) return { status: 'up', text: `กำลังเพิ่มขึ้น (+${diff.toFixed(2)} ม.)`, diff: diff };
+    if (diff <= -0.05) return { status: 'down_fast', text: `ลดลงอย่างรวดเร็ว (${diff.toFixed(2)} ม.)`, diff: diff };
+    if (diff <= -0.03) return { status: 'down_normal', text: `ลดลงปานกลาง (${diff.toFixed(2)} ม.)`, diff: diff };
+    if (diff <= -0.01) return { status: 'down_slow', text: `ลดลงเล็กน้อย (${diff.toFixed(2)} ม.)`, diff: diff };
+    if (diff >= 0.01) return { status: 'up', text: `เพิ่มขึ้น (+${diff.toFixed(2)} ม.)`, diff: diff };
     return { status: 'stable', text: 'ทรงตัว', diff: diff };
 }
 
@@ -318,9 +321,10 @@ function updateNodeColor(stationKey, nodeClass) {
 
 function getFlowProperties(diff) {
     // diff < 0 means water is dropping
-    if (diff <= -0.04) return { stroke: 'stroke-green-500', text: 'text-green-500', speed: 3 }; // ลดลงมาก (ขยับไว)
-    if (diff <= -0.02) return { stroke: 'stroke-blue-400', text: 'text-blue-400', speed: 1.5 }; // ขยับไวขึ้นกว่าปกติ
-    return { stroke: 'stroke-red-500', text: 'text-red-500', speed: 0.2 }; // ไม่ขยับ หรือขยับน้อยมาก หรือน้ำขึ้น
+    if (diff <= -0.05) return { stroke: 'stroke-green-500', text: 'text-green-500', speed: 3 }; // สีเขียว
+    if (diff <= -0.03) return { stroke: 'stroke-blue-400', text: 'text-blue-400', speed: 1.5 }; // สีฟ้า
+    if (diff <= -0.01) return { stroke: 'stroke-yellow-500', text: 'text-yellow-500', speed: 0.8 }; // สีเหลือง
+    return { stroke: 'stroke-red-500', text: 'text-red-500', speed: 0.2 }; // ทรงตัว/เพิ่มขึ้น (สีแดง)
 }
 
 function analyzeDrainage() {
@@ -383,8 +387,8 @@ function analyzeDrainage() {
     });
     
     // Generate overall summary
-    if (s130.status === 'down') {
-        if (s131.status !== 'down' && s39.status !== 'down') {
+    if (s130.diff <= -0.01) {
+        if (s131.diff > -0.01 && s39.diff > -0.01) {
             html += `<div class="p-3 bg-red-100 text-red-800 rounded border border-red-200">
                 <strong>⚠️ ตรวจพบความผิดปกติ:</strong> สถานีต้นน้ำ (130) ระดับน้ำกำลังลดลง แต่สถานีถัดไป (131 และ 39) ยังไม่ลดตาม อาจมีสิ่งกีดขวางทางน้ำ หรือการระบายน้ำล่าช้า
             </div>`;
@@ -393,7 +397,7 @@ function analyzeDrainage() {
                 <strong>✅ การระบายน้ำปกติ:</strong> น้ำถูกพร่องลงอย่างต่อเนื่องไปสู่ปลายน้ำ
             </div>`;
         }
-    } else if (s130.status === 'up') {
+    } else if (s130.diff >= 0.01) {
          html += `<div class="p-3 bg-orange-100 text-orange-800 rounded border border-orange-200">
                 <strong>⏳ แจ้งเตือน:</strong> สถานีต้นน้ำ (130) มีระดับน้ำเพิ่มขึ้น โปรดเฝ้าระวังมวลน้ำที่จะไหลผ่าน 131 ไปยัง 39 ในอีก 1-2 ชั่วโมง
             </div>`;
