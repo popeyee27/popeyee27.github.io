@@ -262,18 +262,18 @@ function updateWarningBanner(stationName) {
 function getTrend(stationName) {
     const data = allStationsData[stationName] || [];
     const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
-    if(validData.length < 4) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0 };
+    if(validData.length < 4) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0, html: '<span class="text-slate-500 font-bold">ข้อมูลไม่เพียงพอ</span>' };
     
     // Compare latest vs 30 mins ago (4 records ago)
     const latest = parseFloat(validData[validData.length - 1]['ระดับน้ำด้านใน ม.รทก.']);
     const old = parseFloat(validData[validData.length - 4]['ระดับน้ำด้านใน ม.รทก.']); 
     
     const diff = latest - old;
-    if (diff <= -0.05) return { status: 'down_fast', text: `ลดลงอย่างรวดเร็ว (${diff.toFixed(2)} ม.)`, diff: diff };
-    if (diff <= -0.03) return { status: 'down_normal', text: `ลดลงปานกลาง (${diff.toFixed(2)} ม.)`, diff: diff };
-    if (diff <= -0.01) return { status: 'down_slow', text: `ลดลงเล็กน้อย (${diff.toFixed(2)} ม.)`, diff: diff };
-    if (diff >= 0.01) return { status: 'up', text: `เพิ่มขึ้น (+${diff.toFixed(2)} ม.)`, diff: diff };
-    return { status: 'stable', text: 'ทรงตัว', diff: diff };
+    if (diff <= -0.05) return { status: 'down_fast', text: `ลดลงอย่างรวดเร็ว (${diff.toFixed(2)} ม.)`, diff: diff, html: `<span class="text-green-500 font-bold">ลดลงอย่างรวดเร็ว (${diff.toFixed(2)} ม.)</span>` };
+    if (diff <= -0.03) return { status: 'down_normal', text: `ลดลงปานกลาง (${diff.toFixed(2)} ม.)`, diff: diff, html: `<span class="text-blue-500 font-bold">ลดลงปานกลาง (${diff.toFixed(2)} ม.)</span>` };
+    if (diff <= -0.01) return { status: 'down_slow', text: `ลดลงเล็กน้อย (${diff.toFixed(2)} ม.)`, diff: diff, html: `<span class="text-yellow-600 font-bold">ลดลงเล็กน้อย (${diff.toFixed(2)} ม.)</span>` }; // use yellow-600 for better contrast on white background
+    if (diff >= 0.01) return { status: 'up', text: `เพิ่มขึ้น (+${diff.toFixed(2)} ม.)`, diff: diff, html: `<span class="text-red-500 font-bold">เพิ่มขึ้น (+${diff.toFixed(2)} ม.)</span>` };
+    return { status: 'stable', text: 'ทรงตัว', diff: diff, html: `<span class="text-red-500 font-bold">ทรงตัว</span>` };
 }
 
 function getStatusForLevel(val) {
@@ -341,9 +341,9 @@ function analyzeDrainage() {
     updateNodeColor('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)', 'node-39');
     
     let html = `<ul class="space-y-2 mb-3">
-        <li><span class="font-bold text-slate-700">📌 ต้นน้ำ (130 ซ.ร่มเกล้า 20):</span> ${s130.text}</li>
-        <li><span class="font-bold text-slate-700">📌 กลางน้ำ (131 มอเตอร์เวย์):</span> ${s131.text}</li>
-        <li><span class="font-bold text-slate-700">📌 ปลายน้ำ (39 ปตร.ลาดกระบัง):</span> ${s39.text}</li>
+        <li><span class="font-bold text-slate-700">📌 ต้นน้ำ (130 ซ.ร่มเกล้า 20):</span> ${s130.html}</li>
+        <li><span class="font-bold text-slate-700">📌 กลางน้ำ (131 มอเตอร์เวย์):</span> ${s131.html}</li>
+        <li><span class="font-bold text-slate-700">📌 ปลายน้ำ (39 ปตร.ลาดกระบัง):</span> ${s39.html}</li>
     </ul>`;
     
     // Determine flow speeds and colors for Upper (130->131), Lower (131->Jct), and Gate (39->Jct/Out)
