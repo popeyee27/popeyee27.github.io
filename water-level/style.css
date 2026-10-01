@@ -80,3 +80,9 @@ body {
 .car-card:hover {
   transform: translateY(-2px);
 }
+
+/* Flow map lines */
+.flow-line {
+  stroke-dasharray: 12 12;
+}
+
