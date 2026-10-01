@@ -1,3 +1,115 @@
+let map, marker130, marker131, marker39;
+let isMapInitialized = false;
+
+function initMap() {
+    if (isMapInitialized) return;
+    isMapInitialized = true;
+    
+    // Initialize Leaflet map
+    map = L.map('map', { zoomControl: false }).setView([13.73, 100.75], 13);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    }).addTo(map);
+    
+    // Define custom icon for stations
+    const stationIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+    
+    const activeIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59,130,246,0.8);"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    // Approximate coordinates (can be adjusted later)
+    // 130 ร่มเกล้า 20 (North) -> 131 มอเตอร์เวย์ (Mid) -> 39 ปตร ลาดกระบัง (South-East)
+    marker130 = L.marker([13.760, 100.750], {icon: stationIcon}).addTo(map).bindPopup('ซ.ร่มเกล้า 20 (130)').on('click', () => selectStation('คลองสองต้นนุ่น'));
+    marker131 = L.marker([13.730, 100.752], {icon: stationIcon}).addTo(map).bindPopup('มอเตอร์เวย์ (131)').on('click', () => selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)'));
+    marker39  = L.marker([13.715, 100.770], {icon: stationIcon}).addTo(map).bindPopup('ปตร.ลาดกระบัง (39)').on('click', () => selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)'));
+    
+    // Draw canal line
+    const canalPoints = [
+        [13.760, 100.750],
+        [13.730, 100.752],
+        [13.715, 100.770]
+    ];
+    L.polyline(canalPoints, {color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '10, 10', dashOffset: '0'}).addTo(map);
+    
+    // Animate the line (simple CSS-like effect by shifting dash offset periodically)
+    let offset = 0;
+    setInterval(() => {
+        offset -= 1;
+        const paths = document.querySelectorAll('path.leaflet-interactive');
+        paths.forEach(p => p.style.strokeDashoffset = offset + 'px');
+    }, 50);
+}
+
+// Bottom Sheet Drag Logic
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    
+    const bottomSheet = document.getElementById('bottomSheet');
+    const dragHandle = document.getElementById('dragHandle');
+    
+    let startY = 0;
+    let currentTranslate = 50; // starts at 50vh
+    let isDragging = false;
+    
+    function pxToVh(px) { return (px / window.innerHeight) * 100; }
+    
+    function onDragStart(e) {
+      isDragging = true;
+      startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+      bottomSheet.style.transition = 'none';
+    }
+    
+    function onDragMove(e) {
+      if (!isDragging) return;
+      const y = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+      const deltaY = y - startY;
+      const deltaVh = pxToVh(deltaY);
+      
+      let newTranslate = currentTranslate + deltaVh;
+      if (newTranslate < 0) newTranslate = 0; // max expanded
+      if (newTranslate > 75) newTranslate = 75; // max collapsed
+      
+      bottomSheet.style.transform = `translateY(${newTranslate}vh)`;
+    }
+    
+    function onDragEnd(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      bottomSheet.style.transition = 'transform 0.3s ease-out';
+      
+      const match = bottomSheet.style.transform.match(/translateY\((.*)vh\)/);
+      if (match) {
+        const currentPos = parseFloat(match[1]);
+        if (currentPos < 25) currentTranslate = 0; // snap top
+        else if (currentPos > 60) currentTranslate = 70; // snap bottom
+        else currentTranslate = 50; // snap middle
+        
+        bottomSheet.style.transform = `translateY(${currentTranslate}vh)`;
+      }
+    }
+    
+    dragHandle.addEventListener('mousedown', onDragStart);
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragEnd);
+    
+    dragHandle.addEventListener('touchstart', onDragStart, {passive: true});
+    document.addEventListener('touchmove', (e) => { if (isDragging) e.preventDefault(); onDragMove(e); }, {passive: false});
+    document.addEventListener('touchend', onDragEnd);
+});
+
+// Original Constants and Fetch Logic
 const BANK_LEVEL = 1.00;
 const CRITICAL_LEVEL = 0.80;
 const WARNING_LEVEL = 0.50;
@@ -30,6 +142,13 @@ Papa.parse('cleaned_water_level.csv?t=' + new Date().getTime(), {
 
 function selectStation(stationName) {
     currentStation = stationName;
+    
+    // Pan map to marker
+    if (map) {
+        if (stationName === 'คลองสองต้นนุ่น' && marker130) map.panTo(marker130.getLatLng());
+        else if (stationName === 'คลองสองต้นนุ่น (มอเตอร์เวย์)' && marker131) map.panTo(marker131.getLatLng());
+        else if (stationName === 'คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)' && marker39) map.panTo(marker39.getLatLng());
+    }
     
     // Update Map UI highlighting
     const nodes = {
