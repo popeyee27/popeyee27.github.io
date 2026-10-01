@@ -119,6 +119,11 @@ function updateWarningBanner(stationName) {
             <span class="text-xl">⚠️</span> แจ้งเตือน: ระดับน้ำที่สถานีนี้กำลังเพิ่มขึ้น ${trend.text.replace('กำลังเพิ่มขึ้น ', '')}
         </div>`;
         banner.classList.remove('hidden');
+    } else if (trend.status === 'down') {
+        banner.innerHTML = `<div class="bg-blue-500 text-white p-3 rounded-xl shadow-sm text-sm font-bold flex items-center justify-center gap-2 mb-4">
+            <span class="text-xl">🌊</span> สถานการณ์ดี: ระดับน้ำที่สถานีนี้กำลังลดลงอย่างรวดเร็ว ${trend.text.replace('กำลังลดลง ', '')}
+        </div>`;
+        banner.classList.remove('hidden');
     } else {
         banner.classList.add('hidden');
         banner.innerHTML = '';
