@@ -2,7 +2,7 @@ name: Auto Scrape Water Level Data
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Run every 15 minutes
+    - cron: '*/7 * * * *' # Run every 7 minutes
   workflow_dispatch: # Allows manual trigger
 
 jobs:

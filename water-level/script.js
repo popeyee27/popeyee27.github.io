@@ -34,27 +34,118 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 50);
 });
 
-// Fetch and parse data (with cache-busting)
-Papa.parse('cleaned_water_level.csv?t=' + new Date().getTime(), {
-  download: true,
-  header: true,
-  skipEmptyLines: true,
-  complete: function(results) {
-    const data = results.data;
-    if(data.length === 0) return;
-    
-    allStationsData = {};
-    data.forEach(row => {
-        const station = row['คลอง'];
-        if(!allStationsData[station]) allStationsData[station] = [];
-        allStationsData[station].push(row);
-    });
+// Station definition mapped to ThaiWater API IDs
+const THAIWATER_STATIONS = [
+  { id: 172, name: 'คลองสองต้นนุ่น' },
+  { id: 173, name: 'คลองสองต้นนุ่น (มอเตอร์เวย์)' },
+  { id: 81,  name: 'คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)' }
+];
 
-    // Initial render
-    selectStation('คลองสองต้นนุ่น'); // Default
-    analyzeDrainage();
+function formatThaiDateTime(isoStr) {
+  if (!isoStr) return '';
+  const [datePart, timePart] = isoStr.split(' ');
+  const [yearStr, monthStr, dayStr] = datePart.split('-');
+  const yearBE = parseInt(yearStr, 10) + 543;
+  return `${dayStr}/${monthStr}/${yearBE} ${timePart}`;
+}
+
+async function loadData() {
+  try {
+    const today = new Date();
+    const past = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fmt = d => d.toISOString().split('T')[0];
+    const startDate = fmt(past);
+    const endDate = fmt(today);
+
+    const tempStationsData = {};
+    THAIWATER_STATIONS.forEach(s => { tempStationsData[s.name] = []; });
+
+    // 1. Fetch historical graph data for all 3 stations concurrently
+    await Promise.all(THAIWATER_STATIONS.map(async (st) => {
+      try {
+        const url = `https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=canal&station_id=${st.id}&start_date=${startDate}&end_date=${endDate}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const graphData = (json.data && json.data.graph_data) ? json.data.graph_data : [];
+
+        const rows = [];
+        graphData.forEach(item => {
+          if (item.value !== null && item.value !== undefined && !isNaN(parseFloat(item.value))) {
+            rows.push({
+              'คลอง': st.name,
+              'วัน-เวลา': formatThaiDateTime(item.datetime),
+              'ระดับน้ำด้านใน ม.รทก.': parseFloat(item.value).toFixed(2)
+            });
+          }
+        });
+        tempStationsData[st.name] = rows;
+      } catch (err) {
+        console.warn(`[ThaiWater API] Error fetching graph for ${st.name}:`, err);
+      }
+    }));
+
+    // 2. Fetch latest canal status from canal_waterlevel
+    try {
+      const res = await fetch('https://api-v3.thaiwater.net/api/v1/thaiwater30/public/canal_waterlevel');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          json.data.forEach(item => {
+            const stationObj = THAIWATER_STATIONS.find(s => s.id === (item.station && item.station.id));
+            if (stationObj && item.canal_datetime && item.canal_value !== null && !isNaN(parseFloat(item.canal_value))) {
+              const formattedDt = formatThaiDateTime(item.canal_datetime);
+              const rows = tempStationsData[stationObj.name] || [];
+              const exists = rows.some(r => r['วัน-เวลา'] === formattedDt);
+              if (!exists) {
+                rows.push({
+                  'คลอง': stationObj.name,
+                  'วัน-เวลา': formattedDt,
+                  'ระดับน้ำด้านใน ม.รทก.': parseFloat(item.canal_value).toFixed(2)
+                });
+              }
+              tempStationsData[stationObj.name] = rows;
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[ThaiWater API] Error fetching canal_waterlevel:', err);
+    }
+
+    const hasData = Object.values(tempStationsData).some(arr => arr.length > 0);
+    if (hasData) {
+      allStationsData = tempStationsData;
+      selectStation(currentStation);
+      analyzeDrainage();
+      return;
+    }
+    throw new Error('No data received from ThaiWater API');
+  } catch (error) {
+    console.warn('[ThaiWater API] Falling back to cleaned_water_level.csv:', error);
+    Papa.parse('cleaned_water_level.csv?t=' + new Date().getTime(), {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const data = results.data;
+        if (data.length === 0) return;
+        allStationsData = {};
+        data.forEach(row => {
+          const station = row['คลอง'];
+          if (!allStationsData[station]) allStationsData[station] = [];
+          allStationsData[station].push(row);
+        });
+        selectStation(currentStation);
+        analyzeDrainage();
+      }
+    });
   }
-});
+}
+
+// Initial load & automatic refresh every 5 minutes
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
 
 function selectStation(stationName) {
     currentStation = stationName;
