@@ -316,7 +316,7 @@
       let suvStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
       let pickupStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
 
-      if (level > CRITICAL_LEVEL) {
+      if (level >= CRITICAL_LEVEL) {
         badgeHtml = '🚨 วิกฤต';
         badgeClasses = 'bg-red-100 text-red-700';
         levelTextBorder = 'border-red-400 shadow-red-500/40';
@@ -325,7 +325,7 @@
         suvStatus = { text: '⚠️ ควรหลีกเลี่ยง', color: 'bg-orange-100 text-orange-700', border: 'border-orange-200 bg-orange-50' };
         pickupStatus = { text: '✅ ผ่านได้ (ช้าๆ)', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
         
-      } else if (level > WARNING_LEVEL) {
+      } else if (level >= WARNING_LEVEL) {
         badgeHtml = '⚠️ เฝ้าระวัง';
         badgeClasses = 'bg-orange-100 text-orange-700';
         levelTextBorder = 'border-orange-400 shadow-orange-500/40';
