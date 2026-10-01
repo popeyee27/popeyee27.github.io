@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="refresh" content="300">
+  <link rel="icon" href="data:,">
   <title>สถานการณ์น้ำ คลองสองต้นนุ่น</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -343,7 +344,7 @@
       
       const wave1 = document.getElementById('wave1');
       const wave2 = document.getElementById('wave2');
-      const badge = document.getElementById('statusBadge');
+      const statusBadgeElement = document.getElementById('statusBadge');
       const waterCircle = document.getElementById('waterCircle');
       
       wave1.style.bottom = `${percent}%`;
@@ -382,8 +383,8 @@
           levelTextBox.className = `bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg border-2 text-center transform translate-y-4 ${levelTextBorder}`;
       }
       
-      badge.innerHTML = badgeHtml;
-      badge.className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClasses}`;
+      statusBadgeElement.innerHTML = badgeHtml;
+      statusBadgeElement.className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClasses}`;
 
       // Update Car Cards
       updateCarCard('Sedan', sedanStatus);
