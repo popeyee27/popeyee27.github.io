@@ -279,40 +279,47 @@ function analyzeDrainage() {
     </ul>`;
     
     // Update the SVG flow lines based on trend
-    const pathUpper = document.getElementById('path-130-131');
-    const pathLower = document.getElementById('path-131-39');
+    const pathsUpper = [
+        document.getElementById('path-130-131-a')
+    ];
+    const pathsLower = [
+        document.getElementById('path-131-39-a'),
+        document.getElementById('path-131-39-b'),
+        document.getElementById('path-131-39-joint')
+    ];
     
-    if (pathUpper && pathLower) {
-        pathUpper.className.baseVal = 'flow-line transition-colors duration-500 ';
-        pathLower.className.baseVal = 'flow-line transition-colors duration-500 ';
-    }
+    // Reset classes
+    [...pathsUpper, ...pathsLower].forEach(el => {
+        if (!el) return;
+        el.className.baseVal = el.tagName === 'circle' ? 'text-slate-300 transition-colors duration-500' : 'flow-line stroke-slate-300 transition-colors duration-500';
+    });
     
     if (s130.status === 'down') {
         if (s131.status !== 'down' && s39.status !== 'down') {
             html += `<div class="p-3 bg-red-100 text-red-800 rounded border border-red-200">
                 <strong>⚠️ ตรวจพบความผิดปกติ:</strong> สถานีต้นน้ำ (130) ระดับน้ำกำลังลดลง แต่สถานีถัดไป (131 และ 39) ยังไม่ลดตาม อาจมีสิ่งกีดขวางทางน้ำ หรือการระบายน้ำล่าช้า
             </div>`;
-            if(pathUpper) pathUpper.className.baseVal += 'stroke-red-500';
-            if(pathLower) pathLower.className.baseVal += 'stroke-red-500';
+            pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-red-500' : ' stroke-red-500'; });
+            pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-red-500' : ' stroke-red-500'; });
         } else {
             html += `<div class="p-3 bg-green-100 text-green-800 rounded border border-green-200">
                 <strong>✅ การระบายน้ำปกติ:</strong> น้ำถูกพร่องลงอย่างต่อเนื่องไปสู่ปลายน้ำ
             </div>`;
-            if(pathUpper) pathUpper.className.baseVal += 'stroke-blue-400';
-            if(pathLower) pathLower.className.baseVal += 'stroke-blue-400';
+            pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-blue-400' : ' stroke-blue-400'; });
+            pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-blue-400' : ' stroke-blue-400'; });
         }
     } else if (s130.status === 'up') {
          html += `<div class="p-3 bg-orange-100 text-orange-800 rounded border border-orange-200">
                 <strong>⏳ แจ้งเตือน:</strong> สถานีต้นน้ำ (130) มีระดับน้ำเพิ่มขึ้น โปรดเฝ้าระวังมวลน้ำที่จะไหลผ่าน 131 ไปยัง 39 ในอีก 1-2 ชั่วโมง
             </div>`;
-         if(pathUpper) pathUpper.className.baseVal += 'stroke-orange-400';
-         if(pathLower) pathLower.className.baseVal += 'stroke-orange-400';
+         pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-orange-400' : ' stroke-orange-400'; });
+         pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-orange-400' : ' stroke-orange-400'; });
     } else {
          html += `<div class="p-3 bg-slate-200 text-slate-800 rounded border border-slate-300">
                 <strong>ℹ️ สถานการณ์:</strong> ระดับน้ำทรงตัว ไม่มีสัญญาณการเร่งระบายน้ำที่ชัดเจน
             </div>`;
-         if(pathUpper) pathUpper.className.baseVal += 'stroke-slate-300';
-         if(pathLower) pathLower.className.baseVal += 'stroke-slate-300';
+         pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-slate-300' : ' stroke-slate-300'; });
+         pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-slate-300' : ' stroke-slate-300'; });
     }
     
     box.innerHTML = html;
