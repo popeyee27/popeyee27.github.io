@@ -289,6 +289,13 @@ function updateNodeColor(stationKey, nodeClass) {
         
         circle.classList.add(colors.border);
         span.classList.add(colors.text);
+        
+        // Show water level in circle
+        if (validData.length > 0) {
+            span.innerText = val.toFixed(2);
+        } else {
+            span.innerText = '-';
+        }
     });
 }
 
