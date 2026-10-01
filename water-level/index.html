@@ -101,10 +101,14 @@
   <div class="max-w-3xl mx-auto p-4 space-y-6">
     
     <!-- Header -->
-    <header class="flex justify-between items-start pt-4">
+    <header class="flex justify-between items-start pt-4 flex-wrap gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">ค.สองต้นนุ่น ซ.ร่มเกล้า 20</h1>
-        <p class="text-sm text-slate-500">กรุงเทพมหานคร • เขตลาดกระบัง</p>
+        <select id="stationSelector" class="text-xl sm:text-2xl font-bold text-slate-800 bg-transparent border-b-2 border-blue-500 focus:outline-none cursor-pointer pb-1">
+          <option value="คลองสองต้นนุ่น">คลองสองต้นนุ่น ซ.ร่มเกล้า 20 (130)</option>
+          <option value="คลองสองต้นนุ่น (มอเตอร์เวย์)">คลองสองต้นนุ่น ถ.มอเตอร์เวย์ (131)</option>
+          <option value="คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)">คลองประเวศบุรีรมย์ ปตร.ลาดกระบัง (39)</option>
+        </select>
+        <p class="text-sm text-slate-500 mt-2">กรุงเทพมหานคร • เขตลาดกระบัง</p>
       </div>
       <div class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-sm font-semibold rounded-lg shadow-sm">
         <div>ข้อมูลล่าสุด: <span id="latestTime">--:--</span></div>
@@ -199,9 +203,18 @@
     <!-- History Chart -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
       <h2 class="text-lg font-bold text-slate-800 mb-1">📉 ระดับน้ำย้อนหลัง 3 วัน</h2>
-      <p class="text-sm text-slate-500 mb-4">แนวโน้มการระบายน้ำของคลอง</p>
+      <p class="text-sm text-slate-500 mb-4">แนวโน้มการระบายน้ำของสถานีปัจจุบัน</p>
       <div class="w-full h-64">
         <canvas id="historyChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Drainage Analysis Report -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">🌊 วิเคราะห์แนวโน้มการระบายน้ำ</h2>
+      <p class="text-sm text-slate-500 mb-4">ทิศทางน้ำ: มอเตอร์เวย์ (131) ➔ ปตร.ลาดกระบัง (39) ➔ ซ.ร่มเกล้า 20 (130)</p>
+      <div id="drainageAnalysisBox" class="p-4 rounded-xl border bg-slate-50 text-sm">
+        กำลังวิเคราะห์ข้อมูล...
       </div>
     </div>
     
@@ -216,6 +229,9 @@
     const BANK_LEVEL = 1.00;
     const CRITICAL_LEVEL = 0.80;
     const WARNING_LEVEL = 0.50;
+    
+    let allStationsData = {};
+    let currentStation = 'คลองสองต้นนุ่น';
 
     // Fetch and parse data (with cache-busting)
     Papa.parse('cleaned_water_level.csv?t=' + new Date().getTime(), {
@@ -226,27 +242,41 @@
         const data = results.data;
         if(data.length === 0) return;
         
-        // Filter last 3 days for chart
+        allStationsData = {};
+        data.forEach(row => {
+            const station = row['คลอง'];
+            if(!allStationsData[station]) allStationsData[station] = [];
+            allStationsData[station].push(row);
+        });
+
+        document.getElementById('stationSelector').addEventListener('change', function(e) {
+            currentStation = e.target.value;
+            renderStation(currentStation);
+        });
+        
+        // Initial render
+        renderStation(currentStation);
+        analyzeDrainage();
+      }
+    });
+    
+    function renderStation(stationName) {
+        const data = allStationsData[stationName] || [];
         const chartData = [];
         const chartLabels = [];
         
         let latestVal = 0;
-        let latestDate = '';
+        let latestDate = '--:--';
         
-        // Process data (it's ordered chronologically)
         data.forEach(row => {
           const dt = row['วัน-เวลา'];
           let val = parseFloat(row['ระดับน้ำด้านใน ม.รทก.']);
-          
           if(!dt || isNaN(val)) return;
-          
           latestVal = val;
           latestDate = dt;
         });
 
-        // Downsample for the chart to not be too heavy (e.g. 1 point per hour)
         let lastHour = -1;
-        // Only keep last 3 days (3 * 24 = 72 hours max)
         const reversed = [...data].reverse();
         const recentPoints = [];
         
@@ -255,18 +285,16 @@
            let val = parseFloat(row['ระดับน้ำด้านใน ม.รทก.']);
            if(!dt || isNaN(val)) continue;
            
-           // Simple downsample: take the first record of each hour
-           const timePart = dt.split(' ')[1]; // "HH:MM"
-           const hour = timePart.split(':')[0];
-           const datePart = dt.split(' ')[0].substring(0, 5); // "DD/MM"
+           const timePart = dt.split(' ')[1];
+           const hour = timePart ? timePart.split(':')[0] : '';
+           const datePart = dt.split(' ')[0].substring(0, 5);
            
            const key = datePart + ' ' + hour;
            if (key !== lastHour) {
-               recentPoints.unshift({label: dt.substring(0, 11), val: val}); // DD/MM HH:MM
+               recentPoints.unshift({label: dt.substring(0, 11), val: val});
                lastHour = key;
            }
-           
-           if (recentPoints.length >= 72) break; // 3 days
+           if (recentPoints.length >= 72) break;
         }
 
         recentPoints.forEach(pt => {
@@ -276,8 +304,58 @@
 
         updateUI(latestVal, latestDate);
         renderChart(chartLabels, chartData);
-      }
-    });
+    }
+    
+    function getTrend(stationName) {
+        const data = allStationsData[stationName] || [];
+        const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
+        if(validData.length < 12) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ' };
+        
+        // Compare latest vs 1-2 hours ago (about 6-12 records ago since it's every 10 mins)
+        const latest = parseFloat(validData[validData.length - 1]['ระดับน้ำด้านใน ม.รทก.']);
+        const old = parseFloat(validData[validData.length - 7]['ระดับน้ำด้านใน ม.รทก.']); // ~1 hour ago
+        
+        const diff = latest - old;
+        if (diff <= -0.02) return { status: 'down', text: `กำลังลดลง (${diff.toFixed(2)} ม./ชม.)` };
+        if (diff >= 0.02) return { status: 'up', text: `กำลังเพิ่มขึ้น (+${diff.toFixed(2)} ม./ชม.)` };
+        return { status: 'stable', text: 'ทรงตัว' };
+    }
+
+    function analyzeDrainage() {
+        const box = document.getElementById('drainageAnalysisBox');
+        
+        const s131 = getTrend('คลองสองต้นนุ่น (มอเตอร์เวย์)');
+        const s39 = getTrend('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)');
+        const s130 = getTrend('คลองสองต้นนุ่น');
+        
+        let html = `<ul class="space-y-2 mb-3">
+            <li><span class="font-bold text-slate-700">📌 ต้นน้ำ (131 มอเตอร์เวย์):</span> ${s131.text}</li>
+            <li><span class="font-bold text-slate-700">📌 กลางน้ำ (39 ปตร.ลาดกระบัง):</span> ${s39.text}</li>
+            <li><span class="font-bold text-slate-700">📌 ปลายน้ำ (130 ร่มเกล้า 20):</span> ${s130.text}</li>
+        </ul>`;
+        
+        if (s131.status === 'down') {
+            if (s39.status !== 'down' || s130.status !== 'down') {
+                html += `<div class="p-3 bg-red-100 text-red-800 rounded border border-red-200">
+                    <strong>⚠️ ตรวจพบความผิดปกติ:</strong> สถานีต้นน้ำ (131) ระดับน้ำกำลังลดลงอย่างรวดเร็ว แต่สถานีถัดไป (39 หรือ 130) ยังไม่ลดตาม อาจมีสิ่งกีดขวางทางน้ำ หรือการระบายน้ำล่าช้า
+                </div>`;
+            } else {
+                html += `<div class="p-3 bg-green-100 text-green-800 rounded border border-green-200">
+                    <strong>✅ การระบายน้ำปกติ:</strong> ระดับน้ำลดลงอย่างสอดคล้องกันทั้ง 3 สถานี
+                </div>`;
+            }
+        } else if (s131.status === 'up') {
+             html += `<div class="p-3 bg-orange-100 text-orange-800 rounded border border-orange-200">
+                    <strong>⏳ แจ้งเตือน:</strong> สถานีต้นน้ำระดับน้ำกำลังเพิ่มขึ้น โปรดเฝ้าระวังสถานีปลายน้ำในอีก 1-2 ชั่วโมง
+                </div>`;
+        } else {
+             html += `<div class="p-3 bg-slate-200 text-slate-800 rounded border border-slate-300">
+                    <strong>ℹ️ สถานการณ์:</strong> ระดับน้ำทรงตัว ไม่มีสัญญาณการระบายน้ำที่ชัดเจน
+                </div>`;
+        }
+        
+        box.innerHTML = html;
+    }
 
     function updateUI(level, datetime) {
       document.getElementById('latestTime').innerText = datetime;
