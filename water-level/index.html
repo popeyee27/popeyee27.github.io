@@ -111,10 +111,11 @@
         <!-- Flow Diagram -->
         <div class="relative w-full max-w-md mx-auto flex justify-between items-center px-4">
           
-          <!-- Connecting Line -->
-          <div class="absolute top-5 left-10 right-10 h-1.5 bg-blue-100 z-0 rounded-full">
-            <div class="h-full bg-blue-300 rounded-full animate-pulse"></div>
-          </div>
+          <!-- Connecting Lines (SVG for animation) -->
+          <svg class="absolute top-5 left-0 w-full h-2 z-0" style="transform: translateY(-50%);">
+            <line id="stepper-path-upper" x1="15%" y1="50%" x2="50%" y2="50%" stroke-width="6" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
+            <line id="stepper-path-lower" x1="50%" y1="50%" x2="85%" y2="50%" stroke-width="6" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
+          </svg>
 
           <!-- Node 130 -->
           <button onclick="selectStation('คลองสองต้นนุ่น')" class="station-node node-130 relative z-10 flex flex-col items-center group">

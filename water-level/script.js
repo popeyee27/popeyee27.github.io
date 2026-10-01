@@ -17,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
         offsetUpper -= speedUpper;
         offsetLower -= speedLower;
         
-        document.querySelectorAll('#path-130-131-a').forEach(p => {
+        document.querySelectorAll('#path-130-131-a, #stepper-path-upper').forEach(p => {
             p.style.strokeDashoffset = offsetUpper + 'px';
         });
         
-        document.querySelectorAll('#path-131-39-a, #path-131-39-b').forEach(p => {
+        document.querySelectorAll('#path-131-39-a, #path-131-39-b, #stepper-path-lower').forEach(p => {
             p.style.strokeDashoffset = offsetLower + 'px';
         });
     }, 50);
@@ -65,9 +65,9 @@ function selectStation(stationName) {
             const circle = btn.querySelector('.node-circle');
             
             if (key === stationName) {
-                circle.classList.add('ring-4', 'ring-blue-400', 'ring-offset-2', 'scale-110');
+                circle.classList.add('scale-125', 'shadow-xl', 'shadow-slate-400/50');
             } else {
-                circle.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-2', 'scale-110');
+                circle.classList.remove('scale-125', 'shadow-xl', 'shadow-slate-400/50');
             }
         });
     });
@@ -332,11 +332,15 @@ function analyzeDrainage() {
     speedUpper = upperProps.speed;
     speedLower = lowerProps.speed;
     
-    const pathsUpper = [document.getElementById('path-130-131-a')];
+    const pathsUpper = [
+        document.getElementById('path-130-131-a'),
+        document.getElementById('stepper-path-upper')
+    ];
     const pathsLower = [
         document.getElementById('path-131-39-a'),
         document.getElementById('path-131-39-b'),
-        document.getElementById('path-131-39-joint')
+        document.getElementById('path-131-39-joint'),
+        document.getElementById('stepper-path-lower')
     ];
     
     // Apply classes
