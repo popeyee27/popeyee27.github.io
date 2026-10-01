@@ -261,15 +261,15 @@ function updateWarningBanner(stationName) {
 function getTrend(stationName) {
     const data = allStationsData[stationName] || [];
     const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
-    if(validData.length < 12) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0 };
+    if(validData.length < 2) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0 };
     
-    // Compare latest vs 1-2 hours ago (about 6-12 records ago since it's every 10 mins)
+    // Compare latest vs previous record (10-15 mins ago)
     const latest = parseFloat(validData[validData.length - 1]['ระดับน้ำด้านใน ม.รทก.']);
-    const old = parseFloat(validData[validData.length - 7]['ระดับน้ำด้านใน ม.รทก.']); // ~1 hour ago
+    const old = parseFloat(validData[validData.length - 2]['ระดับน้ำด้านใน ม.รทก.']); // previous record
     
     const diff = latest - old;
-    if (diff <= -0.02) return { status: 'down', text: `กำลังลดลง (${diff.toFixed(2)} ม./ชม.)`, diff: diff };
-    if (diff >= 0.02) return { status: 'up', text: `กำลังเพิ่มขึ้น (+${diff.toFixed(2)} ม./ชม.)`, diff: diff };
+    if (diff <= -0.02) return { status: 'down', text: `กำลังลดลง (${diff.toFixed(2)} ม.)`, diff: diff };
+    if (diff >= 0.02) return { status: 'up', text: `กำลังเพิ่มขึ้น (+${diff.toFixed(2)} ม.)`, diff: diff };
     return { status: 'stable', text: 'ทรงตัว', diff: diff };
 }
 
@@ -318,8 +318,8 @@ function updateNodeColor(stationKey, nodeClass) {
 
 function getFlowProperties(diff) {
     // diff < 0 means water is dropping
-    if (diff <= -0.05) return { stroke: 'stroke-green-500', text: 'text-green-500', speed: 3 }; // ลดลงมาก (ขยับไว)
-    if (diff <= -0.01) return { stroke: 'stroke-blue-400', text: 'text-blue-400', speed: 1.5 }; // ขยับไวขึ้นกว่าปกติ
+    if (diff <= -0.04) return { stroke: 'stroke-green-500', text: 'text-green-500', speed: 3 }; // ลดลงมาก (ขยับไว)
+    if (diff <= -0.02) return { stroke: 'stroke-blue-400', text: 'text-blue-400', speed: 1.5 }; // ขยับไวขึ้นกว่าปกติ
     return { stroke: 'stroke-red-500', text: 'text-red-500', speed: 0.2 }; // ไม่ขยับ หรือขยับน้อยมาก หรือน้ำขึ้น
 }
 
