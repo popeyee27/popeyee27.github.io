@@ -105,9 +105,10 @@
         <h1 class="text-2xl font-bold text-slate-800">ค.สองต้นนุ่น ซ.ร่มเกล้า 20</h1>
         <p class="text-sm text-slate-500">กรุงเทพมหานคร • เขตลาดกระบัง</p>
       </div>
-      <button class="px-4 py-2 bg-white border border-slate-300 text-sm font-semibold rounded-lg shadow-sm hover:bg-slate-50">
-        ข้อมูลล่าสุด: <span id="latestTime">--:--</span>
-      </button>
+      <div class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-sm font-semibold rounded-lg shadow-sm">
+        <div>ข้อมูลล่าสุด: <span id="latestTime">--:--</span></div>
+        <span id="timeAgoBadge" class="hidden px-2 py-0.5 rounded text-[0.7rem] font-bold"></span>
+      </div>
     </header>
 
     <!-- Main Water Level Card -->
@@ -281,6 +282,47 @@
       document.getElementById('latestTime').innerText = datetime;
       document.getElementById('currentLevelText').innerText = level.toFixed(2);
       
+      // Calculate Time Ago
+      const badge = document.getElementById('timeAgoBadge');
+      try {
+          const parts = datetime.split(' ');
+          const dateParts = parts[0].split('/');
+          const timeParts = parts[1].split(':');
+          
+          const day = parseInt(dateParts[0], 10);
+          const month = parseInt(dateParts[1], 10) - 1;
+          const year = parseInt(dateParts[2], 10) - 543;
+          const hour = parseInt(timeParts[0], 10);
+          const minute = parseInt(timeParts[1], 10);
+          
+          const recordTime = new Date(year, month, day, hour, minute);
+          const now = new Date();
+          const diffMins = Math.max(0, Math.floor((now - recordTime) / 60000));
+          
+          badge.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-yellow-100', 'text-yellow-700', 'bg-slate-100', 'text-slate-600');
+          
+          if (diffMins < 60) {
+              badge.innerText = `${diffMins} นาทีที่แล้ว`;
+              badge.classList.add('bg-green-100', 'text-green-700');
+          } else {
+              const diffHours = Math.floor(diffMins / 60);
+              if (diffHours < 3) {
+                  badge.innerText = `${diffHours} ชั่วโมงที่แล้ว`;
+                  badge.classList.add('bg-yellow-100', 'text-yellow-700');
+              } else {
+                  const diffDays = Math.floor(diffHours / 24);
+                  if (diffDays === 0) {
+                      badge.innerText = `${diffHours} ชั่วโมงที่แล้ว`;
+                  } else {
+                      badge.innerText = `${diffDays} วันที่แล้ว`;
+                  }
+                  badge.classList.add('bg-slate-100', 'text-slate-600');
+              }
+          }
+      } catch (e) {
+          badge.classList.add('hidden');
+      }
+
       // Calculate Bank difference
       const diffBank = BANK_LEVEL - level;
       const bankTextEl = document.getElementById('bankStatusText');
