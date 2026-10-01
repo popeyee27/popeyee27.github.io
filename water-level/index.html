@@ -52,13 +52,19 @@
         <line id="path-130-131-a" x1="160" y1="25%" x2="160" y2="50%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
         
         <!-- Flow 131 -> Corner -->
-        <line id="path-131-39-a" x1="160" y1="50%" x2="160" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        <line id="path-131-junction" x1="160" y1="50%" x2="160" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
         
-        <!-- Flow Corner -> 39 -->
-        <line id="path-131-39-b" x1="160" y1="75%" x2="260" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        <!-- Flow 39 -> Corner (Flows LEFT) -->
+        <line id="path-39-junction" x1="260" y1="75%" x2="160" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        
+        <!-- Outflow West (Leftward) -->
+        <line id="path-out-west" x1="160" y1="75%" x2="-100" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        
+        <!-- Outflow South (Downward) -->
+        <line id="path-out-south" x1="160" y1="75%" x2="160" y2="120%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
         
         <!-- Corner Joint Dot -->
-        <circle cx="160" cy="75%" r="4" fill="currentColor" class="text-slate-400 transition-colors duration-500" id="path-131-39-joint" />
+        <circle cx="160" cy="75%" r="4" fill="currentColor" class="text-slate-400 transition-colors duration-500" id="path-junction-joint" />
       </svg>
 
       <!-- Map Nodes Overlay (Constrained width) -->

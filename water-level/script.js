@@ -8,21 +8,28 @@ let chartInstance = null;
 
 let speedUpper = 1;
 let speedLower = 1;
+let speedGate = 1;
 let offsetUpper = 0;
 let offsetLower = 0;
+let offsetGate = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     // animate flow paths natively
     setInterval(() => {
         offsetUpper -= speedUpper;
         offsetLower -= speedLower;
+        offsetGate -= speedGate;
         
         document.querySelectorAll('#path-130-131-a, #stepper-path-upper').forEach(p => {
             p.style.strokeDashoffset = offsetUpper + 'px';
         });
         
-        document.querySelectorAll('#path-131-39-a, #path-131-39-b, #stepper-path-lower').forEach(p => {
+        document.querySelectorAll('#path-131-junction, #stepper-path-lower').forEach(p => {
             p.style.strokeDashoffset = offsetLower + 'px';
+        });
+        
+        document.querySelectorAll('#path-39-junction, #path-out-west, #path-out-south').forEach(p => {
+            p.style.strokeDashoffset = offsetGate + 'px';
         });
     }, 50);
 });
@@ -325,22 +332,28 @@ function analyzeDrainage() {
         <li><span class="font-bold text-slate-700">📌 ปลายน้ำ (39 ปตร.ลาดกระบัง):</span> ${s39.text}</li>
     </ul>`;
     
-    // Determine flow speeds and colors for Upper (130->131) and Lower (131->39)
+    // Determine flow speeds and colors for Upper (130->131), Lower (131->Jct), and Gate (39->Jct/Out)
     const upperProps = getFlowProperties(s130.diff || 0);
     const lowerProps = getFlowProperties(s131.diff || 0);
+    const gateProps = getFlowProperties(s39.diff || 0);
     
     speedUpper = upperProps.speed;
     speedLower = lowerProps.speed;
+    speedGate = gateProps.speed;
     
     const pathsUpper = [
         document.getElementById('path-130-131-a'),
         document.getElementById('stepper-path-upper')
     ];
     const pathsLower = [
-        document.getElementById('path-131-39-a'),
-        document.getElementById('path-131-39-b'),
-        document.getElementById('path-131-39-joint'),
+        document.getElementById('path-131-junction'),
         document.getElementById('stepper-path-lower')
+    ];
+    const pathsGate = [
+        document.getElementById('path-39-junction'),
+        document.getElementById('path-out-west'),
+        document.getElementById('path-out-south'),
+        document.getElementById('path-junction-joint')
     ];
     
     // Apply classes
@@ -352,6 +365,11 @@ function analyzeDrainage() {
     pathsLower.forEach(el => {
         if (!el) return;
         el.className.baseVal = el.tagName === 'circle' ? `${lowerProps.text} transition-colors duration-500` : `flow-line ${lowerProps.stroke} transition-colors duration-500`;
+    });
+    
+    pathsGate.forEach(el => {
+        if (!el) return;
+        el.className.baseVal = el.tagName === 'circle' ? `${gateProps.text} transition-colors duration-500` : `flow-line ${gateProps.stroke} transition-colors duration-500`;
     });
     
     // Generate overall summary
