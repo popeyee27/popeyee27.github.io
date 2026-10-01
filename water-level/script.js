@@ -63,8 +63,8 @@ function loadCSVData() {
 // Initial load
 loadCSVData();
 
-// Auto refresh CSV data every 10 minutes
-setInterval(loadCSVData, 10 * 60 * 1000);
+// Auto refresh CSV data every 5 minutes
+setInterval(loadCSVData, 5 * 60 * 1000);
 
 function selectStation(stationName) {
     currentStation = stationName;
