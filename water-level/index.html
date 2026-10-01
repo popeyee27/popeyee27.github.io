@@ -217,8 +217,8 @@
     const CRITICAL_LEVEL = 0.80;
     const WARNING_LEVEL = 0.50;
 
-    // Fetch and parse data
-    Papa.parse('cleaned_water_level.csv', {
+    // Fetch and parse data (with cache-busting)
+    Papa.parse('cleaned_water_level.csv?t=' + new Date().getTime(), {
       download: true,
       header: true,
       skipEmptyLines: true,
