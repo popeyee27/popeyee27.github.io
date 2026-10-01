@@ -3,1308 +3,207 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบติดตามและคาดการณ์สถานการณ์น้ำ - คลองสองต้นนุ่น</title>
-  <!-- Chart.js & html2canvas CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <style>
-    :root {
-      --bg-dark: #0b0f19;
-      --card-bg: #111827;
-      --card-border: #1f2937;
-      --card-hover: #1e293b;
-      --text-main: #f9fafb;
-      --text-muted: #9ca3af;
-      --accent-blue: #38bdf8;
-      --accent-cyan: #06b6d4;
-      --danger: #ef4444;
-      --danger-bg: rgba(239, 68, 68, 0.15);
-      --danger-border: rgba(239, 68, 68, 0.3);
-      --warning: #f59e0b;
-      --warning-bg: rgba(245, 158, 11, 0.15);
-      --warning-border: rgba(245, 158, 11, 0.3);
-      --safe: #10b981;
-      --safe-bg: rgba(16, 185, 129, 0.15);
-      --safe-border: rgba(16, 185, 129, 0.3);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Leelawadee UI', 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      padding: 24px 16px;
-      line-height: 1.6;
-    }
-
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-    }
-
-    /* Header Bar */
-    header {
-      background: #111827;
-      border: 1px solid var(--card-border);
-      padding: 22px 28px;
-      border-radius: 16px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-    }
-
-    .header-info h1 {
-      font-size: 1.55rem;
-      font-weight: 700;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header-info p {
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .status-badge-live {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 4px 12px;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .status-pulse {
-      width: 8px;
-      height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #10b981;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.3); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.8; }
-    }
-
-    /* Action Buttons */
-    .btn-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid var(--card-border);
-      background: #1f2937;
-      color: #e5e7eb;
-      transition: all 0.2s ease;
-    }
-
-    .btn:hover {
-      background: #374151;
-      border-color: #4b5563;
-      color: white;
-    }
-
-    .btn-primary {
-      background: #2563eb;
-      border-color: #3b82f6;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #1d4ed8;
-    }
-
-    /* SECTION 1: HERO RISK & SAFE COUNTDOWNS (อันดับ 1) */
-    .risk-banner {
-      background: linear-gradient(180deg, #182234 0%, #111827 100%);
-      border: 1px solid #2563eb44;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .risk-banner-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #93c5fd;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .progress-section {
-      margin-bottom: 20px;
-    }
-    .progress-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-    .progress-bar-bg {
-      height: 12px;
-      background: #1f2937;
-      border-radius: 9999px;
-      overflow: hidden;
-      display: flex;
-      border: 1px solid #374151;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #10b981, #06b6d4, #f59e0b);
-      width: 16.7%;
-      transition: width 1s ease-in-out;
-    }
-
-    .countdown-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-    }
-
-    .countdown-card {
-      background: #0f172a;
-      border-radius: 14px;
-      padding: 20px;
-      border: 1px solid var(--card-border);
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-
-    .countdown-card:hover {
-      transform: translateY(-3px);
-    }
-
-    .countdown-card.card-danger {
-      border-color: var(--danger-border);
-      background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, #0f172a 100%);
-    }
-
-    .countdown-card.card-warning {
-      border-color: var(--warning-border);
-      background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, #0f172a 100%);
-    }
-
-    .countdown-card.card-safe {
-      border-color: var(--safe-border);
-      background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, #0f172a 100%);
-    }
-
-    .countdown-card.card-normal {
-      border-color: #3b82f644;
-      background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, #0f172a 100%);
-    }
-
-    .card-stage-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-      display: inline-block;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .badge-stage-danger { background: var(--danger-bg); color: #fca5a5; }
-    .badge-stage-warning { background: var(--warning-bg); color: #fcd34d; }
-    .badge-stage-safe { background: var(--safe-bg); color: #6ee7b7; }
-    .badge-stage-normal { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
-
-    .card-target-level {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 4px;
-    }
-
-    .card-days-left {
-      font-size: 2.1rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      line-height: 1.1;
-      margin: 8px 0;
-    }
-
-    .days-danger { color: #f87171; }
-    .days-warning { color: #fbbf24; }
-    .days-safe { color: #34d399; }
-    .days-normal { color: #60a5fa; }
-
-    .card-eta-date {
-      font-size: 0.85rem;
-      color: #d1d5db;
-      font-weight: 600;
-    }
-
-    .card-note {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 6px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      padding-top: 6px;
-    }
-
-    /* SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (VISUAL FIRST) */
-    .infographic-section {
-      background: linear-gradient(180deg, #141f32 0%, #0d1525 100%);
-      border: 1px solid #38bdf855;
-      border-radius: 18px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-    }
-
-    .infographic-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      gap: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 12px;
-    }
-
-    .infographic-title h2 {
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .infographic-title p {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      margin-top: 2px;
-    }
-
-    /* Hero Infographic Picture Container */
-    .infographic-hero-image-wrap {
-      position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 1px solid #38bdf866;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      background: #090d16;
-    }
-
-    .infographic-hero-image-wrap img {
-      width: 100%;
-      height: auto;
-      max-height: 460px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .image-caption-bar {
-      background: rgba(11, 15, 25, 0.95);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 12px 18px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.85rem;
-    }
-
-    .image-caption-bar strong {
-      color: #38bdf8;
-    }
-
-    /* 3 Visual Quick Cards - Minimal Text */
-    .visual-cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .vcard {
-      background: #0f172a;
-      border-radius: 14px;
-      padding: 18px;
-      border: 1px solid #1e293b;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-
-    .vcard:hover {
-      transform: translateY(-3px);
-      border-color: #475569;
-    }
-
-    .vcard-sedan { border-top: 5px solid #f59e0b; }
-    .vcard-suv { border-top: 5px solid #10b981; }
-    .vcard-pickup { border-top: 5px solid #38bdf8; }
-
-    .vcard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .vcard-name {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #ffffff;
-    }
-
-    .vcard-models {
-      font-size: 0.78rem;
-      color: #94a3b8;
-    }
-
-    .vcard-badge {
-      font-size: 0.75rem;
-      font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 9999px;
-    }
-
-    .vbadge-warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); }
-    .vbadge-safe { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5); }
-
-    .vcard-metric-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 10px;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 8px;
-      margin-bottom: 6px;
-      font-size: 0.82rem;
-    }
-
-    .vcard-metric-row span:first-child { color: #94a3b8; }
-    .vcard-metric-row span:last-child { font-weight: 700; color: #f3f4f6; }
-
-    .vcard-safe-date {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.85rem;
-    }
-
-    .vcard-date-highlight {
-      font-size: 1.05rem;
-      font-weight: 800;
-      padding: 3px 10px;
-      border-radius: 6px;
-    }
-
-    /* 4 Visual Driving Tips */
-    .visual-tips-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-    }
-
-    .vtip {
-      background: #090d16;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .vtip-icon {
-      font-size: 1.4rem;
-      flex-shrink: 0;
-    }
-
-    .vtip-text strong {
-      display: block;
-      color: #f3f4f6;
-      font-size: 0.85rem;
-    }
-
-    .vtip-text small {
-      color: #94a3b8;
-      font-size: 0.75rem;
-    }
-
-    /* SECTION 3: INTUITIVE CHART SECTION (อันดับ 3: วางใต้ Infographic) */
-    .chart-section {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .chart-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      gap: 12px;
-    }
-
-    .chart-title-area h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .chart-title-area p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .chart-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .chart-pill {
-      background: #1f2937;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 0.8rem;
-      color: #d1d5db;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .chart-pill strong {
-      color: #ffffff;
-    }
-
-    .chart-container {
-      position: relative;
-      height: 420px;
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    .chart-footer-guide {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid #1f2937;
-      font-size: 0.82rem;
-    }
-
-    .guide-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .guide-color {
-      width: 14px;
-      height: 14px;
-      border-radius: 4px;
-      flex-shrink: 0;
-    }
-
-    /* SECTION 4: FILTER & SEARCHABLE MILESTONES TABLE (อันดับ 4) */
-    .filter-section {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .filter-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .filter-btn {
-      background: #1f2937;
-      border: 1px solid #374151;
-      color: #d1d5db;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .filter-btn:hover {
-      background: #374151;
-      color: white;
-    }
-
-    .filter-btn.active {
-      background: #2563eb;
-      border-color: #3b82f6;
-      color: white;
-      box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
-    }
-
-    .search-box {
-      position: relative;
-      min-width: 240px;
-    }
-
-    .search-box input {
-      width: 100%;
-      background: #0b0f19;
-      border: 1px solid #374151;
-      color: #f3f4f6;
-      padding: 7px 12px 7px 32px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      outline: none;
-    }
-
-    .search-box input:focus {
-      border-color: #3b82f6;
-    }
-
-    .search-box svg {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 14px;
-      height: 14px;
-      fill: #9ca3af;
-    }
-
-    /* Milestone Table Card */
-    .table-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 24px;
-      overflow-x: auto;
-    }
-
-    .table-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-
-    th {
-      background: #1f2937;
-      color: #9ca3af;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      font-weight: 600;
-      padding: 12px 14px;
-      text-align: left;
-      border-bottom: 1px solid #374151;
-    }
-
-    td {
-      padding: 14px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      color: #e5e7eb;
-    }
-
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .badge-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-    .badge-warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .badge-cleared { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-    .badge-base { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-
-    .highlight-return-row {
-      background: rgba(16, 185, 129, 0.05);
-      border-left: 4px solid #10b981;
-    }
-
-    /* Driving Checklist & Context */
-    .context-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .context-card {
-      background: #111827;
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 16px 20px;
-      font-size: 0.88rem;
-    }
-
-    .context-card strong {
-      color: #38bdf8;
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .context-card p, .context-card ul {
-      color: var(--text-muted);
-      line-height: 1.5;
-      font-size: 0.83rem;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #6b7280;
-      padding: 16px 0;
-      border-top: 1px solid var(--card-border);
-    }
-
-    @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      .btn-group, .filter-section {
-        display: none !important;
-      }
-      .countdown-card, .table-card, .chart-section, .infographic-section {
-        border: 1px solid #ccc;
-        background: white;
-        color: black;
-      }
-    }
+  <title>สถานการณ์น้ำ คลองสองต้นนุ่น</title>
   
-    /* Animations */
-    .stat-card, .vcard, .legend-item {
-      transition: all 0.3s ease !important;
-    }
-    .stat-card:hover, .vcard:hover {
-      transform: translateY(-5px) scale(1.02) !important;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
-    }
-    .animate-fade-in {
-      animation: fadeIn 1s ease-out forwards;
-      opacity: 0;
-    }
-    .animate-slide-up {
-      animation: slideUp 0.8s ease-out forwards;
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    .delay-1 { animation-delay: 0.2s; }
-    .delay-2 { animation-delay: 0.4s; }
-    .delay-3 { animation-delay: 0.6s; }
-
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-    @keyframes slideUp {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-</head>
-<body>
-  <div class="container" id="reportArea">
-    <!-- Header -->
-    <header class="animate-fade-in">
-      <div class="header-info">
-        <h1>
-          🌊 ระบบติดตามและคาดการณ์สถานการณ์น้ำ: คลองสองต้นนุ่น
-          <span class="status-badge-live">
-            <span class="status-pulse"></span>
-            สถานะ: กำลังระบายน้ำต่อเนื่อง (-5.5 ซม./วัน)
-          </span>
-        </h1>
-        <p>สถานี: ค.สองต้นนุ่น ซ.ร่มเกล้า 20 | ข้อมูลล่าสุด: <span id="lastUpdatedText" style="color:var(--accent-blue); font-weight:bold;">กำลังโหลด...</span></p>
-      </div>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: #f3f4f6;
+    }
+    
+    /* Circular Wave Design */
+    .water-circle {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+      box-shadow: inset 0 6px 15px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.05);
+      transition: background 0.5s ease;
+    }
 
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="exportFullCanvas()">
-          📸 เซฟหน้ารายงาน (Canvas PNG)
-        </button>
-        <button class="btn" onclick="exportChartCanvas()">
-          📊 เซฟเฉพาะกราฟ
-        </button>
-        <button class="btn" onclick="window.print()">
-          🖨️ พิมพ์ / PDF
-        </button>
+    /* Scales inside the circle */
+    .scale-mark {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    .scale-text {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.7);
+      font-weight: 500;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .wave-overlay {
+      position: absolute;
+      width: 250%;
+      height: 250%;
+      background: #ffffff; /* matches card bg to hide top part */
+      left: -75%;
+      border-radius: 42%;
+      animation: spin 7s linear infinite;
+      transition: bottom 1s ease-in-out;
+      z-index: 5;
+    }
+    
+    .wave-overlay-2 {
+      position: absolute;
+      width: 250%;
+      height: 250%;
+      background: rgba(255, 255, 255, 0.4);
+      left: -75%;
+      border-radius: 46%;
+      animation: spin 11s linear infinite;
+      transition: bottom 1s ease-in-out;
+      z-index: 4;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .car-card {
+      transition: transform 0.2s;
+    }
+    .car-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="text-gray-800 antialiased pb-10">
+
+  <div class="max-w-3xl mx-auto p-4 space-y-6">
+    
+    <!-- Header -->
+    <header class="flex justify-between items-start pt-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">ค.สองต้นนุ่น ซ.ร่มเกล้า 20</h1>
+        <p class="text-sm text-slate-500">กรุงเทพมหานคร • เขตลาดกระบัง</p>
       </div>
+      <button class="px-4 py-2 bg-white border border-slate-300 text-sm font-semibold rounded-lg shadow-sm hover:bg-slate-50">
+        ข้อมูลล่าสุด: <span id="latestTime">--:--</span>
+      </button>
     </header>
 
-    <!-- SECTION 1: HERO RISK & SAFE COUNTDOWN CARDS (อันดับ 1: เน้นเรื่องความเสี่ยง พ้นเสี่ยง จำนวนวัน) -->
-    <div class="risk-banner">
-      <div class="risk-banner-title">
-        <span>⏱️ สรุปกรอบเวลาการพ้นความเสี่ยง (Key Safe Milestones Countdown)</span>
-        <span style="font-size: 0.88rem; font-weight: 500; color: #9ca3af;">
-          ระดับน้ำปัจจุบัน: <strong style="color: #fbbf24; font-size:1.05rem;">0.84 ม.รทก.</strong> (ลดลงจากจุดสูงสุด 0.98 ม. แล้ว 14 ซม.)
+    <!-- Main Water Level Card -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+      <div class="flex flex-col sm:flex-row justify-between items-center sm:items-start mb-6 text-center sm:text-left gap-4">
+        <div>
+          <h2 class="text-sm font-medium text-slate-500">สถานการณ์ปัจจุบัน</h2>
+          <p id="bankStatusText" class="text-2xl font-bold text-slate-800 mt-1">กำลังโหลด...</p>
+        </div>
+        <span id="statusBadge" class="px-4 py-1.5 rounded-full text-sm font-bold bg-slate-100 text-slate-500 shadow-sm border border-slate-100">
+          ...
         </span>
       </div>
+      
+      <div class="flex items-center justify-center py-6">
+        <!-- Visual Circular Tank -->
+        <div class="relative flex items-center justify-center w-full">
+          
+          <div class="water-circle" id="waterCircle">
+            
+            <!-- Scale marks (0.0 to 1.0) -->
+            <div class="scale-mark" style="bottom: 80%;"></div>
+            <div class="scale-text" style="bottom: 80%;">0.80 วิกฤต</div>
+            
+            <div class="scale-mark" style="bottom: 50%;"></div>
+            <div class="scale-text" style="bottom: 50%;">0.50 เฝ้าระวัง</div>
+            
+            <div class="scale-mark" style="bottom: 20%;"></div>
+            <div class="scale-text" style="bottom: 20%;">0.20 ปกติ</div>
 
-      <!-- Drainage Progress Bar -->
-      <div class="progress-section">
-        <div class="progress-labels">
-          <span>ความคืบหน้าการระบายน้ำกลับสู่ปกติ</span>
-          <span>ระบายแล้ว 16.7% (เหลือน้ำต้องระบายอีก 70 ซม. จนถึงระดับปกติ 0.14 ม.)</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill"></div>
-        </div>
-      </div>
+            <!-- Waves that hide the top part -->
+            <div id="wave2" class="wave-overlay-2" style="bottom: 50%;"></div>
+            <div id="wave1" class="wave-overlay" style="bottom: 50%;"></div>
+          </div>
+          
+          <!-- Current Level Text overlaid on center -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+            <div class="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg border border-white/50 text-center transform translate-y-4">
+              <div id="currentLevelText" class="text-3xl font-extrabold text-slate-800 leading-none">-.--</div>
+              <div class="text-[0.7rem] text-slate-500 font-medium mt-1">ม.รทก.</div>
+            </div>
+          </div>
 
-      <!-- 4 High Priority Risk Cards -->
-      <div class="countdown-grid">
-        <!-- Card 1: พ้นวิกฤต -->
-        <div class="countdown-card card-danger">
-          <span class="card-stage-badge badge-stage-danger">🚨 ระยะที่ 1: พ้นจุดวิกฤต</span>
-          <div class="card-target-level">ลดลงถึง &le; 0.80 ม.รทก.</div>
-          <div class="card-days-left days-danger">อีก 16 ชม.</div>
-          <div class="card-eta-date">📅 01 ต.ค. 2569 เวลา 16:18 น.</div>
-          <div class="card-note">ลดลงต่ำกว่าระดับเตือนภัยสูงสุด พ้นเกณฑ์วิกฤตน้ำเอ่อล้นตลิ่งหลักริมคลอง</div>
-        </div>
-
-        <!-- Card 2: พ้นจุดเสี่ยงชุมชน -->
-        <div class="countdown-card card-warning">
-          <span class="card-stage-badge badge-stage-warning">⚠️ ระยะที่ 2: ท่อชุมชนไม่อั้น</span>
-          <div class="card-target-level">ลดลงถึง &le; 0.50 ม.รทก.</div>
-          <div class="card-days-left days-warning">อีก 6.1 วัน</div>
-          <div class="card-eta-date">📅 07 ต.ค. 2569 เวลา 02:46 น.</div>
-          <div class="card-note">น้ำในคลองต่ำกว่าท่อระบายน้ำชุมชน น้ำขังในซอยย่อยจะไหลลงคลองได้สะดวก</div>
-        </div>
-
-        <!-- Card 3: พ้นความเสี่ยงสมบูรณ์ -->
-        <div class="countdown-card card-safe">
-          <span class="card-stage-badge badge-stage-safe">🛡️ ระยะที่ 3: พ้นความเสี่ยงสมบูรณ์</span>
-          <div class="card-target-level">ลดลงถึง &le; 0.40 ม.รทก.</div>
-          <div class="card-days-left days-safe">อีก 7.9 วัน (~8 วัน)</div>
-          <div class="card-eta-date">📅 08 ต.ค. 2569 เวลา 22:16 น.</div>
-          <div class="card-note">เข้าสู่โซนปลอดภัย พื้นที่มีแก้มลิงธรรมชาติรับน้ำฝนระลอกใหม่ได้อย่างปลอดภัย</div>
-        </div>
-
-        <!-- Card 4: กลับสู่สภาวะปกติวันแรก -->
-        <div class="countdown-card card-normal">
-          <span class="card-stage-badge badge-stage-normal">✅ ระยะที่ 4: สภาวะปกติวันแรก</span>
-          <div class="card-target-level">ลดลงถึง &le; 0.14 ม.รทก.</div>
-          <div class="card-days-left days-normal">อีก 12.6 วัน (~13 วัน)</div>
-          <div class="card-eta-date">📅 13 ต.ค. 2569 เวลา 15:20 น.</div>
-          <div class="card-note">ระดับน้ำเท่ากับจุดเริ่มต้นวันแรก (23 ก.ย. 00:00 น.) ปลอดภัย 100%</div>
         </div>
       </div>
     </div>
 
-    <!-- SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (อันดับ 2: วางอยู่เหนือกราฟตามคำขอเป๊ะ) -->
-    <!-- SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (VISUAL FIRST - รูปภาพนำ ตัวหนังสือน้อย ไม่ลายตา) -->
-    <!-- SECTION 2: VEHICLE FLOOD CLEARANCE INFOGRAPHIC (VISUAL FIRST - รูปภาพนำ ตัวหนังสือน้อย ไม่ลายตา) -->
-    <div class="infographic-section animate-slide-up delay-2" id="vehicleInfographic">
-      <div class="infographic-header">
-        <div class="infographic-title">
-          <h2>🚗 ภาพอินโฟกราฟิก: ความสามารถในการลุยน้ำของรถยอดนิยมในไทย</h2>
-          <p>เทียบระดับน้ำท่วมผิวถนนจริงกับตัวรถ • ปลอดภัย / ระวัง / ห้ามลุย</p>
-        </div>
-        <span class="status-badge-live" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
-          📍 ระดับน้ำคลองปัจจุบัน 0.84 ม. (ถนนหลักแห้งแล้ว / ในซอยต่ำยังมีน้ำ 5-10 ซม.)
-        </span>
+    <!-- Minimal Car Infographic -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div class="mb-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          🚗 ประเมินการขับรถลุยน้ำ
+        </h2>
+        <p class="text-sm text-slate-500">เทียบระดับน้ำปัจจุบันกับประเภทรถของคุณ</p>
       </div>
-
-      <!-- Hero Infographic Illustration (เน้นรูปภาพชัดเจน มอง 1 วินาทีเข้าใจทันที) -->
-      <div class="infographic-hero-image-wrap">
-        <img src="car_flood_wading_guide.jpg" alt="อินโฟกราฟิกเปรียบเทียบระดับน้ำ Honda City Civic Mazda CX-5 Toyota Fortuner" />
-        <div class="image-caption-bar">
-          <div>
-            <strong>💡 สรุปจากภาพใน 1 วินาที:</strong>
-            <span style="color: #cbd5e1; margin-left: 6px;">
-              รถเก๋งปริ่มล้อ (⚠️ เสี่ยง) &nbsp;|&nbsp; Mazda CX-5 น้ำต่ำกว่ากันชน (🟢 ผ่านสบาย) &nbsp;|&nbsp; กระบะยกสูง (🟢 ลุยได้ทุกจุด)
-            </span>
-          </div>
-          <span style="color: #f87171; font-weight: 700;">⛔ ห้ามให้น้ำแตะขอบล่างป้ายทะเบียนหรือเกินครึ่งล้อรถเก๋ง</span>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- Sedan -->
+        <div id="carSedan" class="car-card p-4 rounded-xl border flex flex-col items-center text-center">
+          <div class="text-3xl mb-2">🚙</div>
+          <h3 class="font-bold text-slate-700 text-sm">รถเก๋ง / ซีดาน</h3>
+          <p class="text-xs text-slate-400 mb-2">City, Civic, Yaris</p>
+          <div id="statusSedan" class="mt-auto px-3 py-1 rounded-full text-xs font-bold w-full">...</div>
         </div>
-      </div>
-
-      <!-- 3 Visual Quick Cards (ตัวหนังสือน้อย ชัดเจน ไม่ลายตา) -->
-      <div class="visual-cards-grid">
-        <!-- Sedan Card -->
-        <div class="vcard vcard-sedan">
-          <div>
-            <div class="vcard-header">
-              <div>
-                <div class="vcard-name">🚗 รถเก๋ง / ซีดาน</div>
-                <div class="vcard-models">Honda City, Civic, Toyota Yaris, Altis</div>
-              </div>
-              <span class="vcard-badge vbadge-warn">⚠️ ระวังแอ่งในซอย</span>
-            </div>
-
-            <div class="vcard-metric-row">
-              <span>ใต้ท้องรถ (Clearance):</span>
-              <span>13.5 - 15.0 ซม.</span>
-            </div>
-            <div class="vcard-metric-row">
-              <span>ระดับน้ำสูงสุดที่ปลอดภัย:</span>
-              <span style="color: #34d399;">&le; 15 ซม. (ครึ่งล้อ)</span>
-            </div>
-            <div class="vcard-metric-row">
-              <span>ระดับวิกฤต (ห้ามลุยเด็ดขาด):</span>
-              <span style="color: #f87171;">&gt; 20 ซม. (น้ำเข้าเครื่อง)</span>
-            </div>
-          </div>
-
-          <div class="vcard-safe-date">
-            <span style="color: #94a3b8;">📅 สัญจรปลอดภัย 100%:</span>
-            <span class="vcard-date-highlight" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">03 ต.ค. 2569</span>
-          </div>
+        
+        <!-- SUV -->
+        <div id="carSUV" class="car-card p-4 rounded-xl border flex flex-col items-center text-center">
+          <div class="text-3xl mb-2">🚐</div>
+          <h3 class="font-bold text-slate-700 text-sm">SUV / Crossover</h3>
+          <p class="text-xs text-slate-400 mb-2">CX-5, CR-V, HR-V</p>
+          <div id="statusSUV" class="mt-auto px-3 py-1 rounded-full text-xs font-bold w-full">...</div>
         </div>
-
-        <!-- SUV Card -->
-        <div class="vcard vcard-suv">
-          <div>
-            <div class="vcard-header">
-              <div>
-                <div class="vcard-name">🚙 Crossover / SUV</div>
-                <div class="vcard-models">Mazda CX-5, Honda HR-V / CR-V, Corolla Cross</div>
-              </div>
-              <span class="vcard-badge vbadge-safe">🟢 ผ่านได้ ปลอดภัย</span>
-            </div>
-
-            <div class="vcard-metric-row">
-              <span>ใต้ท้องรถ (Clearance):</span>
-              <span>19.3 - 21.0 ซม. (CX-5 ~20 ซม.)</span>
-            </div>
-            <div class="vcard-metric-row">
-              <span>ระดับน้ำสูงสุดที่ปลอดภัย:</span>
-              <span style="color: #34d399;">&le; 30 ซม. (ครึ่งล้อ SUV)</span>
-            </div>
-            <div class="vcard-metric-row">
-              <span>ระดับวิกฤต (ห้ามลุยเด็ดขาด):</span>
-              <span style="color: #f87171;">&gt; 40 ซม. (มิดล้อ SUV)</span>
-            </div>
-          </div>
-
-          <div class="vcard-safe-date">
-            <span style="color: #94a3b8;">📅 สัญจรปลอดภัย 100%:</span>
-            <span class="vcard-date-highlight" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">วันนี้ (01 ต.ค.)</span>
-          </div>
-        </div>
-
-        <!-- Pickup Card -->
-        <div class="vcard vcard-pickup">
-          <div>
-            <div class="vcard-header">
-              <div>
-                <div class="vcard-name">🛻 กระบะยกสูง & PPV</div>
-                <div class="vcard-models">Toyota Fortuner, Hilux Revo, Isuzu D-Max</div>
-              </div>
-              <span class="vcard-badge vbadge-safe" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.5);">🟢 ผ่านได้ทุกจุด</span>
-            </div>
-
-            <div class="vcard-metric-row">
-              <span>ใต้ท้องรถ (Clearance):</span>
-              <span>22.5 - 28.0 ซม.</span>
-            </div>
-            <div class="vcard-metric-row">
-              <span>ระดับน้ำสูงสุดที่ปลอดภัย:</span>
-              <span style="color: #34d399;">&le; 50 - 60 ซม.</span>
-            </div>
-            <div class="vcard-metric-row">
-              <span>ระดับวิกฤต (ห้ามลุยเด็ดขาด):</span>
-              <span style="color: #f87171;">&gt; 70 - 80 ซม.</span>
-            </div>
-          </div>
-
-          <div class="vcard-safe-date">
-            <span style="color: #94a3b8;">📅 สัญจรปลอดภัย 100%:</span>
-            <span class="vcard-date-highlight" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">ตลอดเวลา ไร้กังวล</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4 Quick Visual Driving Tips (สั้นกระชับ 4 ข้อ) -->
-      <div class="visual-tips-row">
-        <div class="vtip">
-          <span class="vtip-icon">❄️</span>
-          <div class="vtip-text">
-            <strong>1. ปิดแอร์ทันที</strong>
-            <small>ไม่ให้พัดลมตีน้ำเข้าห้องเครื่อง</small>
-          </div>
-        </div>
-        <div class="vtip">
-          <span class="vtip-icon">⚙️</span>
-          <div class="vtip-text">
-            <strong>2. ใช้เกียร์ต่ำ (L / 1)</strong>
-            <small>รอบ 1,500-2,000 น้ำไม่ย้อนท่อ</small>
-          </div>
-        </div>
-        <div class="vtip">
-          <span class="vtip-icon">🚗</span>
-          <div class="vtip-text">
-            <strong>3. ช้า 10-15 กม./ชม.</strong>
-            <small>ไม่เร่ง-เบรก ไม่สร้างคลื่นน้ำ</small>
-          </div>
-        </div>
-        <div class="vtip">
-          <span class="vtip-icon">🦶</span>
-          <div class="vtip-text">
-            <strong>4. แตะเบรกไล่น้ำ</strong>
-            <small>รีดน้ำจากจานเบรกหลังพ้นน้ำ</small>
-          </div>
+        
+        <!-- Pickup -->
+        <div id="carPickup" class="car-card p-4 rounded-xl border flex flex-col items-center text-center">
+          <div class="text-3xl mb-2">🛻</div>
+          <h3 class="font-bold text-slate-700 text-sm">กระบะยกสูง</h3>
+          <p class="text-xs text-slate-400 mb-2">Revo, D-Max, Fortuner</p>
+          <div id="statusPickup" class="mt-auto px-3 py-1 rounded-full text-xs font-bold w-full">...</div>
         </div>
       </div>
     </div>
 
-    <!-- SECTION 3: INTUITIVE CHART VISUALIZATION (อันดับ 3: อยู่ใต้ Infographic ตามลำดับ) -->
-    <div class="chart-section" id="chartCard">
-      <div class="chart-header">
-        <div class="chart-title-area">
-          <h2>📊 กราฟแสดงแนวโน้มระดับน้ำและการคาดการณ์ (Visual Trend & Forecast)</h2>
-          <p>แบ่งโซนสีความเสี่ยงชัดเจน: สังเกตเส้นกราฟที่กำลังไหลลงจากโซนสีแดงมุ่งหน้าสู่โซนสีเขียว/ฟ้า</p>
-        </div>
-        <div class="chart-pills">
-          <div class="chart-pill">🔴 สูงสุด: <strong>0.98 ม. (28 ก.ย.)</strong></div>
-          <div class="chart-pill">📉 อัตราลดลง: <strong>-5.5 ซม./วัน</strong></div>
-          <div class="chart-pill">🎯 กลับสู่ปกติ: <strong>13 ต.ค. (อีก 12.6 วัน)</strong></div>
-        </div>
-      </div>
-
-      <div class="chart-container animate-slide-up delay-3">
-        <canvas id="waterChart"></canvas>
-      </div>
-
-      <div class="chart-footer-guide">
-        <div class="guide-item">
-          <div class="guide-color" style="background: rgba(239, 68, 68, 0.4); border: 1px solid #ef4444;"></div>
-          <span><strong>โซนวิกฤต (> 0.80 ม.):</strong> น้ำเอ่อล้นตลิ่งต่ำ รถเก๋งห้ามผ่าน</span>
-        </div>
-        <div class="guide-item">
-          <div class="guide-color" style="background: rgba(245, 158, 11, 0.4); border: 1px solid #f59e0b;"></div>
-          <span><strong>โซนเฝ้าระวัง (0.50 - 0.80 ม.):</strong> CX-5 ผ่านได้ / รถเก๋งระวังแอ่งน้ำ</span>
-        </div>
-        <div class="guide-item">
-          <div class="guide-color" style="background: rgba(16, 185, 129, 0.4); border: 1px solid #10b981;"></div>
-          <span><strong>โซนปลอดภัย (0.20 - 0.50 ม.):</strong> รถทุกชนิดสัญจรได้ตามปกติ</span>
-        </div>
-        <div class="guide-item">
-          <div class="guide-color" style="background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6;"></div>
-          <span><strong>โซนปกติวันแรก (&le; 0.20 ม.):</strong> สภาวะปกติทั่วไป (0.08 - 0.14 ม.)</span>
-        </div>
+    <!-- History Chart -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-bold text-slate-800 mb-1">📉 ระดับน้ำย้อนหลัง 3 วัน</h2>
+      <p class="text-sm text-slate-500 mb-4">แนวโน้มการระบายน้ำของคลอง</p>
+      <div class="w-full h-64">
+        <canvas id="historyChart"></canvas>
       </div>
     </div>
-
-    <!-- SECTION 4: FILTER & SEARCHABLE MILESTONES TABLE (อันดับ 4) -->
-    <div class="filter-section">
-      <div class="filter-pills">
-        <button class="filter-btn active" onclick="filterTable('all', this)">ทั้งหมด (10 ระดับ)</button>
-        <button class="filter-btn" onclick="filterTable('critical', this)">🚨 โซนวิกฤต (&gt;0.70 ม.)</button>
-        <button class="filter-btn" onclick="filterTable('warning', this)">⚠️ โซนเฝ้าระวัง (0.50-0.70 ม.)</button>
-        <button class="filter-btn" onclick="filterTable('safe', this)">🛡️ โซนพ้นเสี่ยง (0.20-0.40 ม.)</button>
-        <button class="filter-btn" onclick="filterTable('baseline', this)">✅ สภาวะปกติวันแรก (&le;0.14 ม.)</button>
-      </div>
-
-      <div class="search-box">
-        <svg viewBox="0 0 24 24"><path d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z"/></svg>
-        <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="ค้นหา เช่น 0.80, รถเก๋ง, ปลอดภัย...">
-      </div>
+    
+    <div class="text-center mt-6">
+      <p class="text-xs text-slate-400">อัปเดตอัตโนมัติจากระบบเซนเซอร์วัดน้ำ</p>
     </div>
 
-    <!-- Table Details -->
-    <div class="table-card">
-      <div class="table-title">
-        <span>📋 รายละเอียดการคาดการณ์ระดับน้ำและสภาพการสัญจรทางรถยนต์</span>
-        <span style="font-size: 0.85rem; color: #9ca3af; font-weight: normal;">(คำนวณจากอัตราลดลงเฉลี่ย 5.52 ซม./วัน)</span>
-      </div>
-
-      <table id="milestoneTable">
-        <thead>
-          <tr>
-            <th>ระดับน้ำ (ม.รทก.)</th>
-            <th>ระดับความเสี่ยง</th>
-            <th>จำนวนวันที่เหลือ</th>
-            <th>วัน-เวลา คาดการณ์ (ประมาณ)</th>
-            <th>🚗 รถยนต์ที่ขับผ่านได้</th>
-            <th>สภาพผิวการจราจรและผลกระทบ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr data-category="critical">
-            <td><strong style="color: #fca5a5; font-size:1.05rem;">0.80 ม.</strong></td>
-            <td><span class="badge badge-critical">เริ่มพ้นวิกฤต</span></td>
-            <td><strong style="color: #f87171;">+16.4 ชม. (0.7 วัน)</strong></td>
-            <td>01 ต.ค. 2569 เวลา 16:18 น.</td>
-            <td><span style="color: #fbbf24;">🚙 Mazda CX-5 / กระบะผ่านได้</span> <small style="color:#f87171;">(เก๋งเลี่ยงซอยต่ำ)</small></td>
-            <td>น้ำลดต่ำกว่าแนวกระสอบทราย ถนนใหญ่แห้ง แต่ซอยย่อยยังมีน้ำขัง</td>
-          </tr>
-          <tr data-category="critical">
-            <td><strong style="color: #fca5a5; font-size:1.05rem;">0.70 ม.</strong></td>
-            <td><span class="badge badge-critical">เฝ้าระวังสูง</span></td>
-            <td><strong style="color: #f87171;">+2.5 วัน</strong></td>
-            <td>03 ต.ค. 2569 เวลา 11:47 น.</td>
-            <td><span style="color: #34d399;">🚗 รถเก๋ง City, Civic, Toyota เริ่มผ่านได้ปลอดภัย</span></td>
-            <td>ถนนหลักแห้งสนิท ซอยย่อยเหลือแอ่งน้ำตื้นไม่เกิน 5 ซม. รถเก๋งวิ่งได้สบาย</td>
-          </tr>
-          <tr data-category="warning">
-            <td><strong style="color: #fcd34d; font-size:1.05rem;">0.60 ม.</strong></td>
-            <td><span class="badge badge-warn">เฝ้าระวัง</span></td>
-            <td><strong style="color: #fbbf24;">+4.3 วัน</strong></td>
-            <td>05 ต.ค. 2569 เวลา 07:17 น.</td>
-            <td><span style="color: #34d399;">🚗 ผ่านได้ทุกคัน 100%</span></td>
-            <td>ระดับน้ำในคลองต่ำกว่าสันตลิ่งต่ำ ไม่มีน้ำท่วมขังบนผิวถนนทุกจุด</td>
-          </tr>
-          <tr data-category="warning">
-            <td><strong style="color: #fcd34d; font-size:1.05rem;">0.50 ม.</strong></td>
-            <td><span class="badge badge-warn">เฝ้าระวังปานกลาง</span></td>
-            <td><strong style="color: #fbbf24;">+6.1 วัน</strong></td>
-            <td>07 ต.ค. 2569 เวลา 02:46 น.</td>
-            <td><span style="color: #34d399;">🚗 สัญจรคล่องตัวตามปกติ</span></td>
-            <td>พ้นระดับตลิ่งคลองสายรอง ท่อระบายน้ำชุมชนระบายน้ำได้เต็มประสิทธิภาพ</td>
-          </tr>
-          <tr data-category="safe">
-            <td><strong style="color: #6ee7b7; font-size:1.05rem;">0.40 ม.</strong></td>
-            <td><span class="badge badge-cleared">พ้นความเสี่ยง</span></td>
-            <td><strong style="color: #34d399;">+7.9 วัน (~8 วัน)</strong></td>
-            <td>08 ต.ค. 2569 เวลา 22:16 น.</td>
-            <td><span style="color: #34d399;">🚗 สภาวะปกติสมบูรณ์</span></td>
-            <td>น้ำในท่อชุมชนระบายลงคลองได้คล่องตัว ไม่มีความเสี่ยงน้ำท่วมขัง</td>
-          </tr>
-          <tr data-category="safe">
-            <td><strong style="color: #6ee7b7; font-size:1.05rem;">0.30 ม.</strong></td>
-            <td><span class="badge badge-cleared">ปลอดภัยสูง</span></td>
-            <td><strong style="color: #34d399;">+9.7 วัน</strong></td>
-            <td>10 ต.ค. 2569 เวลา 17:45 น.</td>
-            <td><span style="color: #34d399;">🚗 สภาวะปกติสมบูรณ์</span></td>
-            <td>คลองมีพื้นที่ความจุสำรอง (Freeboard) เพียงพอรองรับฝนตกหนัก</td>
-          </tr>
-          <tr data-category="safe">
-            <td><strong style="color: #6ee7b7; font-size:1.05rem;">0.20 ม.</strong></td>
-            <td><span class="badge badge-cleared">ระดับก่อนวิกฤต</span></td>
-            <td><strong style="color: #34d399;">+11.6 วัน</strong></td>
-            <td>12 ต.ค. 2569 เวลา 13:14 น.</td>
-            <td><span style="color: #34d399;">🚗 สภาวะปกติสมบูรณ์</span></td>
-            <td>ระดับน้ำเทียบเท่าช่วงเช้าของวันที่ 24 ก.ย. ก่อนเริ่มฝนตกสะสม</td>
-          </tr>
-          <tr data-category="baseline" class="highlight-return-row">
-            <td><strong style="color: #60a5fa; font-size:1.1rem;">0.14 ม.</strong></td>
-            <td><span class="badge badge-base">กลับสู่ระดับปกติวันแรก</span></td>
-            <td><strong style="color: #60a5fa;">+12.6 วัน (~13 วัน)</strong></td>
-            <td>13 ต.ค. 2569 เวลา 15:20 น.</td>
-            <td><span style="color: #34d399;">🚗 สภาวะปกติสมบูรณ์</span></td>
-            <td>ระดับน้ำกลับสู่สภาวะปกติเท่ากับเริ่มต้นวันแรก (23 ก.ย. 00:00 น.)</td>
-          </tr>
-          <tr data-category="baseline" class="highlight-return-row">
-            <td><strong style="color: #60a5fa; font-size:1.1rem;">0.10 ม.</strong></td>
-            <td><span class="badge badge-base">ระดับปกติเฉลี่ย</span></td>
-            <td><strong style="color: #60a5fa;">+13.4 วัน</strong></td>
-            <td>14 ต.ค. 2569 เวลา 08:44 น.</td>
-            <td><span style="color: #34d399;">🚗 สภาวะปกติสมบูรณ์</span></td>
-            <td>ระดับค่าเฉลี่ยปกติในฤดูแล้ง/สภาวะปกติของคลองสองต้นนุ่น</td>
-          </tr>
-          <tr data-category="baseline" class="highlight-return-row">
-            <td><strong style="color: #60a5fa; font-size:1.1rem;">0.08 ม.</strong></td>
-            <td><span class="badge badge-base">ระดับต่ำสุดวันแรก</span></td>
-            <td><strong style="color: #60a5fa;">+13.7 วัน (~14 วัน)</strong></td>
-            <td>14 ต.ค. 2569 เวลา 17:26 น.</td>
-            <td><span style="color: #34d399;">🚗 สภาวะปกติสมบูรณ์</span></td>
-            <td>ระดับน้ำต่ำสุดที่ตรวจวัดได้ในวันที่ 23 ก.ย. 2569</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- SECTION 5: HYDROLOGICAL CONTEXT -->
-    <div class="context-grid">
-      <div class="context-card">
-        <strong>⚙️ อัตราการลดลงสม่ำเสมอ:</strong>
-        <p>ระดับน้ำลดลงวันละ 5.52 ซม. (0.23 ซม./ชม.) ด้วยความแม่นยำทางสถิติ R² = 0.9912 สะท้อนว่าสถานีสูบน้ำเดินเครื่องด้วยกำลังสูบคงที่ต่อเนื่อง</p>
-      </div>
-
-      <div class="context-card">
-        <strong>🌧️ ข้อจำกัดฝนตกสะสม:</strong>
-        <p>การคาดการณ์นี้ประเมินบนสภาวะที่ไม่มีฝนตกหนักระลอกใหม่ หากมีฝนตกเพิ่ม อัตราการลดลงจะล่าช้าออกไปตามปริมาณฝนจริง</p>
-      </div>
-
-      <div class="context-card">
-        <strong>🌊 อิทธิพลน้ำทะเลหนุน:</strong>
-        <p>ช่วงน้ำทะเลหนุนสูงในแม่น้ำเจ้าพระยา ประตูระบายน้ำปลายคลองอาจต้องปิดเป็นรอบเวลา ทำให้การระบายช่วงนั้นชะลอตัวลงเล็กน้อย</p>
-      </div>
-    </div>
-
-    <footer>
-      ระบบสรุปรายงานระดับน้ำ คลองสองต้นนุ่น | พัฒนาเพื่อการประเมินความเสี่ยงอุทกวิทยาและการสัญจรชุมชน
-    </footer>
   </div>
 
   <script>
-    // Filtering logic
-    function filterTable(category, btn) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    const BANK_LEVEL = 1.00;
+    const CRITICAL_LEVEL = 0.80;
+    const WARNING_LEVEL = 0.50;
 
-      const rows = document.querySelectorAll('#milestoneTable tbody tr');
-      rows.forEach(row => {
-        if (category === 'all' || row.getAttribute('data-category') === category) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
-    // Search logic
-    function searchTable() {
-      const q = document.getElementById('searchInput').value.toLowerCase();
-      const rows = document.querySelectorAll('#milestoneTable tbody tr');
-      rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(q) ? '' : 'none';
-      });
-    }
-
-    // Custom Plugin to Draw Risk Zones & Milestone Badges directly on Canvas
-    const riskZonesPlugin = {
-      id: 'riskZones',
-      beforeDraw(chart) {
-        const { ctx, chartArea, scales } = chart;
-        if (!chartArea) return;
-        const { left, top, right, bottom, width } = chartArea;
-        const y = scales.y;
-        const x = scales.x;
-
-        ctx.save();
-
-        const yTop = top;
-        const y80 = y.getPixelForValue(0.80);
-        const y50 = y.getPixelForValue(0.50);
-        const y20 = y.getPixelForValue(0.20);
-        const yBottom = bottom;
-
-        // 1. Critical Zone (> 0.80m) - Red tint
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
-        ctx.fillRect(left, yTop, width, y80 - yTop);
-
-        // 2. Warning Zone (0.50m - 0.80m) - Yellow/Orange tint
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.10)';
-        ctx.fillRect(left, y80, width, y50 - y80);
-
-        // 3. Safe Zone (0.20m - 0.50m) - Green tint
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
-        ctx.fillRect(left, y50, width, y20 - y50);
-
-        // 4. Baseline Zone (< 0.20m) - Blue tint
-        ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
-        ctx.fillRect(left, y20, width, yBottom - y20);
-
-        // Zone Watermarks on right edge
-        ctx.font = 'bold 11px "Leelawadee UI", sans-serif';
-        ctx.textAlign = 'right';
-
-        ctx.fillStyle = '#f87171';
-        ctx.fillText('🔴 โซนวิกฤต (> 0.80 ม.) - รถเก๋งห้ามผ่าน', right - 12, yTop + 20);
-
-        ctx.fillStyle = '#fbbf24';
-        ctx.fillText('⚠️ โซนเฝ้าระวัง (0.50 - 0.80 ม.) - CX-5 ผ่านได้ / เก๋งระวัง', right - 12, y80 + 20);
-
-        ctx.fillStyle = '#34d399';
-        ctx.fillText('🛡️ โซนปลอดภัย (0.20 - 0.50 ม.) - รถทุกชนิดผ่านได้', right - 12, y50 + 20);
-
-        ctx.fillStyle = '#60a5fa';
-        ctx.fillText('✅ โซนปกติวันแรก (0.08 - 0.20 ม.)', right - 12, y20 + 20);
-
-        // Vertical Divider line for "ข้อมูลล่าสุด (30 ก.ย.)"
-        const xNow = x.getPixelForValue(chart.data.labels.find(l => typeof l === 'string' && l.includes('(ล่าสุด')));
-        if (xNow && xNow >= left && xNow <= right) {
-          ctx.setLineDash([4, 4]);
-          ctx.strokeStyle = '#94a3b8';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(xNow, top);
-          ctx.lineTo(xNow, bottom);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          ctx.font = 'bold 10px "Leelawadee UI", sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillStyle = '#f1f5f9';
-          ctx.fillText('📍 ข้อมูลล่าสุด', xNow, top + 14);
-          ctx.fillStyle = '#94a3b8';
-          ctx.fillText('◄ ข้อมูลจริง | คาดการณ์ ►', xNow, bottom - 10);
-        }
-
-        ctx.restore();
-      }
-    };
-
-    
-    // Dynamically fetch and parse CSV
-    
-    // Dynamically fetch and parse CSV
+    // Fetch and parse data
     Papa.parse('cleaned_water_level.csv', {
       download: true,
       header: true,
@@ -1313,278 +212,183 @@
         const data = results.data;
         if(data.length === 0) return;
         
-        const dailyData = {};
-        let latestDateStr = '';
-        let latestTimeStr = '';
+        // Filter last 3 days for chart
+        const chartData = [];
+        const chartLabels = [];
+        
         let latestVal = 0;
-        let maxVal = -999;
-        let maxDateStr = '';
-        let previousDayVal = null;
+        let latestDate = '';
         
+        // Process data (it's ordered chronologically)
         data.forEach(row => {
-            const dt = row['วัน-เวลา'];
-            const val = parseFloat(row['ระดับน้ำด้านใน ม.รทก.']);
-            if(!dt || isNaN(val)) return;
-            
-            const parts = dt.split(' ');
-            const dateStr = parts[0];
-            const timeStr = parts[1];
-            
-            if (!dailyData[dateStr]) dailyData[dateStr] = val;
-            else dailyData[dateStr] = Math.max(dailyData[dateStr], val);
-            
-            if (val > maxVal) {
-                maxVal = val;
-                maxDateStr = dateStr;
-            }
-            
-            latestDateStr = dateStr;
-            latestTimeStr = timeStr;
-            latestVal = val;
+          const dt = row['วัน-เวลา'];
+          let val = parseFloat(row['ระดับน้ำด้านใน ม.รทก.']);
+          
+          if(!dt || isNaN(val)) return;
+          
+          latestVal = val;
+          latestDate = dt;
         });
+
+        // Downsample for the chart to not be too heavy (e.g. 1 point per hour)
+        let lastHour = -1;
+        // Only keep last 3 days (3 * 24 = 72 hours max)
+        const reversed = [...data].reverse();
+        const recentPoints = [];
         
-        document.getElementById('lastUpdatedText').innerText = latestDateStr + ' ' + latestTimeStr;
-        
-        const dates = Object.keys(dailyData).sort((a,b) => {
-            const [d1,m1,y1] = a.split('/');
-            const [d2,m2,y2] = b.split('/');
-            return new Date(`${y1}-${m1}-${d1}`) - new Date(`${y2}-${m2}-${d2}`);
-        });
-        
-        // Calculate dynamic drop rate based on last 2 days (or default to 5.5cm/day)
-        let dropRateMeters = 0.055; // default 5.5 cm/day
-        if (dates.length >= 2) {
-            let lastDay = dailyData[dates[dates.length-1]];
-            let prevDay = dailyData[dates[dates.length-2]];
-            if (prevDay > lastDay) {
-                dropRateMeters = prevDay - lastDay;
-                if (dropRateMeters < 0.01) dropRateMeters = 0.055; // fallback if too small
-            }
-        }
-        const dropRateCm = (dropRateMeters * 100).toFixed(1);
-        const cmPerHour = (dropRateCm / 24).toFixed(2);
-        
-        // Update Pills
-        const pills = document.querySelectorAll('.chart-pill');
-        if (pills.length >= 3) {
-            pills[0].innerHTML = `🔴 สูงสุด: <strong>${maxVal.toFixed(2)} ม. (${maxDateStr.substring(0,5)})</strong>`;
-            pills[1].innerHTML = `📉 อัตราลดลง: <strong>-${dropRateCm} ซม./วัน</strong>`;
-        }
-        
-        // Update Context Card
-        const contextCard = document.querySelector('.context-card p');
-        if (contextCard) {
-            contextCard.innerText = `ระดับน้ำลดลงวันละ ${dropRateCm} ซม. (${cmPerHour} ซม./ชม.) คาดการณ์จากข้อมูลล่าสุด ${latestDateStr}`;
-        }
-        
-        // Parse current date to calculate forecast milestones
-        const [curD, curM, curY] = latestDateStr.split('/').map(Number);
-        const curDateObj = new Date(`${curY-543}-${curM}-${curD} ${latestTimeStr}`);
-        
-        // Update Milestone Table
-        const rows = document.querySelectorAll('#milestoneTable tbody tr');
-        rows.forEach(row => {
-            const tdLevel = row.querySelector('td:nth-child(1) strong');
-            if (!tdLevel) return;
-            const targetLevel = parseFloat(tdLevel.innerText);
-            
-            const tdDays = row.querySelector('td:nth-child(3) strong');
-            const tdDate = row.querySelector('td:nth-child(4)');
-            
-            if (targetLevel >= latestVal) {
-                if(tdDays) tdDays.innerHTML = `<span style="color:#10b981">พ้นแล้ว</span>`;
-                if(tdDate) tdDate.innerText = '-';
-            } else {
-                const daysNeeded = (latestVal - targetLevel) / dropRateMeters;
-                const hoursNeeded = daysNeeded * 24;
-                
-                let targetDate = new Date(curDateObj.getTime() + hoursNeeded * 60 * 60 * 1000);
-                
-                if (tdDays) tdDays.innerText = `+${daysNeeded.toFixed(1)} วัน`;
-                
-                const mNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-                if (tdDate) tdDate.innerText = `${targetDate.getDate().toString().padStart(2,'0')} ${mNames[targetDate.getMonth()]} ${targetDate.getFullYear()+543} เวลา ${targetDate.getHours().toString().padStart(2,'0')}:${targetDate.getMinutes().toString().padStart(2,'0')} น.`;
-                
-                // Update final pill for return to normal if level is 0.14
-                if (Math.abs(targetLevel - 0.14) < 0.01 && pills.length >= 3) {
-                    pills[2].innerHTML = `🎯 กลับสู่ปกติ: <strong>${targetDate.getDate()} ${mNames[targetDate.getMonth()]} (อีก ${daysNeeded.toFixed(1)} วัน)</strong>`;
-                }
-            }
-        });
-        
-        // Graph Variables
-        const labels = [];
-        const historicalData = [];
-        const forecastData = [];
-        const normalLine = [];
-        
-        dates.forEach(d => {
-            labels.push(d.substring(0, 5)); 
-            historicalData.push(dailyData[d]);
-            forecastData.push(null);
-            normalLine.push(0.14);
-        });
-        
-        // Ensure 'Now' vertical line works: Update the label format expected by riskZonesPlugin
-        labels[labels.length-1] = `${dates[dates.length-1].substring(0,5)} (ล่าสุด ${latestVal.toFixed(2)}m)`;
-        
-        forecastData[forecastData.length - 1] = latestVal;
-        
-        // Generate forecast 
-        // Generate forecast
-        let currentForecast = latestVal;
-        let [ld, lm, ly] = dates[dates.length-1].split('/').map(Number);
-        let forecastDate = new Date(`${ly-543}-${lm}-${ld}`); // Rough JS date
-        
-        for(let i=0; i<7; i++) {
-            forecastDate.setDate(forecastDate.getDate() + 1);
-            currentForecast -= 0.05;
-            if (currentForecast < 0.14) currentForecast = 0.14;
-            
-            const fdStr = String(forecastDate.getDate()).padStart(2, '0') + '/' + String(forecastDate.getMonth()+1).padStart(2, '0');
-            labels.push(fdStr + ' (คาดการณ์)');
-            historicalData.push(null);
-            forecastData.push(parseFloat(currentForecast.toFixed(2)));
-            normalLine.push(0.14);
-            
-            if (currentForecast <= 0.14) break;
+        for (let row of reversed) {
+           const dt = row['วัน-เวลา'];
+           let val = parseFloat(row['ระดับน้ำด้านใน ม.รทก.']);
+           if(!dt || isNaN(val)) continue;
+           
+           // Simple downsample: take the first record of each hour
+           const timePart = dt.split(' ')[1]; // "HH:MM"
+           const hour = timePart.split(':')[0];
+           const datePart = dt.split(' ')[0].substring(0, 5); // "DD/MM"
+           
+           const key = datePart + ' ' + hour;
+           if (key !== lastHour) {
+               recentPoints.unshift({label: dt.substring(0, 11), val: val}); // DD/MM HH:MM
+               lastHour = key;
+           }
+           
+           if (recentPoints.length >= 72) break; // 3 days
         }
 
+        recentPoints.forEach(pt => {
+            chartLabels.push(pt.label);
+            chartData.push(pt.val);
+        });
 
-
-    
-        const ctx = document.getElementById('waterChart').getContext('2d');
-        if (window.myChart) window.myChart.destroy();
-        window.myChart = new Chart(ctx, {
-
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'ระดับน้ำจริงที่บันทึก',
-            data: historicalData,
-            borderColor: '#38bdf8',
-            backgroundColor: 'rgba(56, 189, 248, 0.15)',
-            borderWidth: 3,
-            pointRadius: 5,
-            pointBackgroundColor: '#38bdf8',
-            pointHoverRadius: 8,
-            tension: 0.15
-          },
-          {
-            label: 'เส้นคาดการณ์น้ำลด (-5.5 ซม./วัน)',
-            data: forecastData,
-            borderColor: '#f87171',
-            backgroundColor: 'transparent',
-            borderWidth: 3,
-            borderDash: [6, 4],
-            pointRadius: 5,
-            pointBackgroundColor: '#ef4444',
-            pointHoverRadius: 8,
-            tension: 0
-          },
-          {
-            label: 'ระดับสภาวะปกติวันแรก (0.14 ม.รทก.)',
-            data: normalLine,
-            borderColor: '#34d399',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            borderDash: [4, 4],
-            pointRadius: 0
-          }
-        ]
-      },
-      plugins: [riskZonesPlugin],
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false
-        },
-        scales: {
-          y: {
-            min: 0,
-            max: 1.05,
-            grid: { color: 'rgba(255, 255, 255, 0.06)' },
-            ticks: { 
-              color: '#9ca3af',
-              font: { family: 'Leelawadee UI', size: 11 },
-              callback: function(v) { return v.toFixed(2) + ' ม.'; }
-            },
-            title: { 
-              display: true, 
-              text: 'ระดับน้ำ (ม.รทก.)', 
-              color: '#cbd5e1',
-              font: { weight: 'bold', size: 12 }
-            }
-          },
-          x: {
-            grid: { color: 'rgba(255, 255, 255, 0.03)' },
-            ticks: { 
-              color: '#d1d5db', 
-              maxRotation: 35, 
-              minRotation: 20,
-              font: { family: 'Leelawadee UI', size: 11 }
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            labels: { 
-              color: '#e2e8f0', 
-              usePointStyle: true, 
-              font: { family: 'Leelawadee UI', size: 12 } 
-            }
-          },
-          tooltip: {
-            backgroundColor: '#111827',
-            titleColor: '#f9fafb',
-            bodyColor: '#e5e7eb',
-            borderColor: '#374151',
-            borderWidth: 1,
-            padding: 12,
-            boxPadding: 6,
-            callbacks: {
-              label: function(c) {
-                if (c.parsed.y === null) return null;
-                return c.dataset.label + ': ' + c.parsed.y.toFixed(2) + ' ม.รทก.';
-              }
-            }
-          }
-        }
+        updateUI(latestVal, latestDate);
+        renderChart(chartLabels, chartData);
       }
     });
-        } // End of complete function
-    }); // End of Papa.parse
 
-    // Export helpers
-    function exportChartCanvas() {
-      const imgURI = myChart.toBase64Image('image/png', 1.0);
-      const link = document.createElement('a');
-      link.download = 'water_level_chart.png';
-      link.href = imgURI;
-      link.click();
+    function updateUI(level, datetime) {
+      document.getElementById('latestTime').innerText = datetime;
+      document.getElementById('currentLevelText').innerText = level.toFixed(2);
+      
+      // Calculate Bank difference
+      const diffBank = BANK_LEVEL - level;
+      const bankTextEl = document.getElementById('bankStatusText');
+      
+      if (diffBank > 0) {
+        bankTextEl.innerText = `ต่ำกว่าตลิ่ง ${diffBank.toFixed(2)} ม.`;
+        bankTextEl.className = "text-2xl font-bold text-slate-800 mt-1";
+      } else {
+        bankTextEl.innerText = `ล้นตลิ่ง ${Math.abs(diffBank).toFixed(2)} ม.`;
+        bankTextEl.className = "text-2xl font-bold text-red-600 mt-1";
+      }
+
+      // Tank Fill Height (max 1.05m to show overflow slightly)
+      const maxDisplay = 1.05;
+      let percent = (level / maxDisplay) * 100;
+      if (percent > 100) percent = 100;
+      if (percent < 0) percent = 0;
+      
+      const wave1 = document.getElementById('wave1');
+      const wave2 = document.getElementById('wave2');
+      const badge = document.getElementById('statusBadge');
+      const waterCircle = document.getElementById('waterCircle');
+      
+      wave1.style.bottom = `${percent}%`;
+      wave2.style.bottom = `${percent}%`;
+
+      // Status Colors & Car logic
+      let fillBg = 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)'; // Safe (Blue)
+      let badgeHtml = 'ปกติ';
+      let badgeClasses = 'bg-blue-100 text-blue-700';
+
+      let sedanStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
+      let suvStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
+      let pickupStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
+
+      if (level > CRITICAL_LEVEL) {
+        fillBg = 'linear-gradient(180deg, #f87171 0%, #dc2626 100%)'; // Red
+        badgeHtml = '🚨 วิกฤต';
+        badgeClasses = 'bg-red-100 text-red-700';
+        
+        sedanStatus = { text: '❌ ห้ามผ่านเด็ดขาด', color: 'bg-red-100 text-red-700', border: 'border-red-200 bg-red-50' };
+        suvStatus = { text: '⚠️ ควรหลีกเลี่ยง', color: 'bg-orange-100 text-orange-700', border: 'border-orange-200 bg-orange-50' };
+        pickupStatus = { text: '✅ ผ่านได้ (ช้าๆ)', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
+        
+      } else if (level > WARNING_LEVEL) {
+        fillBg = 'linear-gradient(180deg, #fbbf24 0%, #d97706 100%)'; // Orange
+        badgeHtml = '⚠️ เฝ้าระวัง';
+        badgeClasses = 'bg-orange-100 text-orange-700';
+        
+        sedanStatus = { text: '⚠️ ระวังแอ่งลึก', color: 'bg-orange-100 text-orange-700', border: 'border-orange-200 bg-orange-50' };
+        suvStatus = { text: '✅ ผ่านได้', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
+        
+      }
+
+      waterCircle.style.background = fillBg;
+      
+      badge.innerHTML = badgeHtml;
+      badge.className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClasses}`;
+
+      // Update Car Cards
+      updateCarCard('Sedan', sedanStatus);
+      updateCarCard('SUV', suvStatus);
+      updateCarCard('Pickup', pickupStatus);
     }
 
-    function exportFullCanvas() {
-      const btnGroup = document.querySelector('.btn-group');
-      btnGroup.style.display = 'none';
+    function updateCarCard(type, status) {
+      const card = document.getElementById(`car${type}`);
+      const badge = document.getElementById(`status${type}`);
+      
+      card.className = `car-card p-4 rounded-xl border flex flex-col items-center text-center ${status.border}`;
+      badge.innerText = status.text;
+      badge.className = `mt-auto px-3 py-1 rounded-full text-[0.7rem] font-bold w-full ${status.color}`;
+    }
 
-      html2canvas(document.getElementById('reportArea'), {
-        scale: 2,
-        backgroundColor: '#0b0f19',
-        useCORS: true
-      }).then(canvas => {
-        btnGroup.style.display = 'flex';
-        const link = document.createElement('a');
-        link.download = 'water_level_dashboard_full.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      }).catch(err => {
-        btnGroup.style.display = 'flex';
-        alert('เกิดข้อผิดพลาดในการสร้าง Canvas: ' + err);
+    function renderChart(labels, data) {
+      const ctx = document.getElementById('historyChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'ระดับน้ำ (ม.รทก.)',
+            data: data,
+            borderColor: '#0ea5e9',
+            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(c) {
+                  return c.parsed.y.toFixed(2) + ' ม.';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              suggestedMin: 0,
+              suggestedMax: 1.0,
+              grid: { color: '#f1f5f9' },
+              border: { display: false }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { maxTicksLimit: 6 }
+            }
+          }
+        }
       });
     }
   </script>
