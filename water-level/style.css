@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+body {
+  font-family: 'Kanit', sans-serif;
+  background-color: #f3f4f6;
+}
+
+/* Circular Wave Design */
+.water-circle {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: linear-gradient(
+    to bottom,
+    #ef4444 0%,
+    #ef4444 20%,
+    #f97316 20%,
+    #f97316 50%,
+    #0ea5e9 50%,
+    #0ea5e9 100%
+  );
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  box-shadow: inset 0 6px 15px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.05);
+}
+
+/* Scales inside the circle */
+.scale-mark {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.scale-text {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.wave-overlay {
+  position: absolute;
+  width: 250%;
+  height: 250%;
+  background: #ffffff; /* matches card bg to hide top part */
+  left: -75%;
+  border-radius: 42%;
+  animation: spin 7s linear infinite;
+  transition: bottom 1s ease-in-out;
+  z-index: 5;
+}
+
+.wave-overlay-2 {
+  position: absolute;
+  width: 250%;
+  height: 250%;
+  background: rgba(255, 255, 255, 0.4);
+  left: -75%;
+  border-radius: 46%;
+  animation: spin 11s linear infinite;
+  transition: bottom 1s ease-in-out;
+  z-index: 4;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.car-card {
+  transition: transform 0.2s;
+}
+.car-card:hover {
+  transform: translateY(-2px);
+}
