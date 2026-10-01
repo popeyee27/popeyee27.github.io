@@ -108,7 +108,25 @@
               <div class="text-[0.7rem] text-slate-500 font-medium mt-1">ม.รทก.</div>
             </div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Trend Stepper UI -->
+      <div class="mt-4 pt-6 border-t border-slate-100">
+        <h3 class="text-sm font-medium text-slate-500 text-center mb-3">เปรียบเทียบการเปลี่ยนแปลง (ระดับน้ำ)</h3>
+        
+        <!-- Segmented Control -->
+        <div class="flex bg-slate-100 p-1 rounded-xl max-w-sm mx-auto">
+          <button onclick="setTrendPeriod(1)" id="btnTrend-1" class="trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-bold rounded-lg bg-white shadow-sm text-blue-600 transition-all">1 ชม.</button>
+          <button onclick="setTrendPeriod(3)" id="btnTrend-3" class="trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-medium rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all">3 ชม.</button>
+          <button onclick="setTrendPeriod(6)" id="btnTrend-6" class="trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-medium rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all">6 ชม.</button>
+          <button onclick="setTrendPeriod(12)" id="btnTrend-12" class="trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-medium rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all">12 ชม.</button>
+          <button onclick="setTrendPeriod(24)" id="btnTrend-24" class="trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-medium rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all">1 วัน</button>
+        </div>
 
+        <div class="text-center mt-4">
+          <p id="trendValueText" class="text-2xl font-bold text-slate-800">--</p>
+          <p id="trendDescText" class="text-xs text-slate-400 mt-1">กำลังคำนวณ...</p>
         </div>
       </div>
     </div>

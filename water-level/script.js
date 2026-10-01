@@ -60,6 +60,108 @@ function selectStation(stationName) {
     renderStation(stationName);
 }
 
+let currentTrendPeriod = 1;
+
+function setTrendPeriod(hours) {
+    currentTrendPeriod = hours;
+    
+    // update UI buttons
+    const periods = [1, 3, 6, 12, 24];
+    periods.forEach(p => {
+        const btn = document.getElementById(`btnTrend-${p}`);
+        if (!btn) return;
+        if (p === hours) {
+            btn.className = "trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-bold rounded-lg bg-white shadow-sm text-blue-600 transition-all";
+        } else {
+            btn.className = "trend-btn flex-1 py-1.5 text-[0.65rem] sm:text-xs font-medium rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all";
+        }
+    });
+    
+    updateTrendDisplay();
+}
+
+function updateTrendDisplay() {
+    const data = allStationsData[currentStation] || [];
+    const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
+    
+    const valueText = document.getElementById('trendValueText');
+    const descText = document.getElementById('trendDescText');
+    if(!valueText || !descText) return;
+    
+    if (validData.length === 0) {
+        valueText.innerText = "--";
+        descText.innerText = "ไม่มีข้อมูล";
+        return;
+    }
+    
+    const latestRow = validData[validData.length - 1];
+    const latestVal = parseFloat(latestRow['ระดับน้ำด้านใน ม.รทก.']);
+    const latestTimeStr = latestRow['วัน-เวลา'];
+    
+    // Parse latest time
+    const parts = latestTimeStr.split(' ');
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    
+    const day = parseInt(dateParts[0], 10);
+    const month = parseInt(dateParts[1], 10) - 1;
+    const year = parseInt(dateParts[2], 10) - 543;
+    const hour = parseInt(timeParts[0], 10);
+    const minute = parseInt(timeParts[1], 10);
+    
+    const latestDate = new Date(year, month, day, hour, minute);
+    const targetDate = new Date(latestDate.getTime() - (currentTrendPeriod * 60 * 60 * 1000));
+    
+    let bestMatchRow = null;
+    let minDiff = Infinity;
+    
+    for (let i = validData.length - 1; i >= 0; i--) {
+        const row = validData[i];
+        const p = row['วัน-เวลา'].split(' ');
+        const dp = p[0].split('/');
+        const tp = p[1].split(':');
+        const rowDate = new Date(
+            parseInt(dp[2], 10) - 543,
+            parseInt(dp[1], 10) - 1,
+            parseInt(dp[0], 10),
+            parseInt(tp[0], 10),
+            parseInt(tp[1], 10)
+        );
+        
+        const diff = Math.abs(rowDate - targetDate);
+        if (diff < minDiff) {
+            minDiff = diff;
+            bestMatchRow = row;
+        } else {
+            if (diff > minDiff) break;
+        }
+    }
+    
+    if (!bestMatchRow || minDiff > 3 * 60 * 60 * 1000) { // allow up to 3 hours tolerance for old data
+        valueText.innerText = "--";
+        descText.innerText = "ไม่มีข้อมูลประวัติในช่วงเวลานี้";
+        return;
+    }
+    
+    const oldVal = parseFloat(bestMatchRow['ระดับน้ำด้านใน ม.รทก.']);
+    const diff = latestVal - oldVal;
+    const periodText = currentTrendPeriod === 24 ? "1 วัน" : `${currentTrendPeriod} ชม.`;
+    
+    if (diff > 0.01) {
+        valueText.innerText = `+${diff.toFixed(2)} ม.`;
+        valueText.className = "text-2xl font-bold text-red-500";
+        descText.innerText = `น้ำเพิ่มขึ้น เทียบกับ ${periodText} ที่แล้ว`;
+    } else if (diff < -0.01) {
+        valueText.innerText = `${diff.toFixed(2)} ม.`;
+        valueText.className = "text-2xl font-bold text-blue-500";
+        descText.innerText = `น้ำลดลง เทียบกับ ${periodText} ที่แล้ว`;
+    } else {
+        valueText.innerText = `0.00 ม.`;
+        valueText.className = "text-2xl font-bold text-slate-500";
+        descText.innerText = `ระดับน้ำคงที่ เทียบกับ ${periodText} ที่แล้ว`;
+    }
+}
+
 function renderStation(stationName) {
     const data = allStationsData[stationName] || [];
     const chartData = [];
@@ -107,6 +209,9 @@ function renderStation(stationName) {
     
     // Check trend for banner
     updateWarningBanner(stationName);
+    
+    // Update Stepper
+    updateTrendDisplay();
 }
 
 function updateWarningBanner(stationName) {
