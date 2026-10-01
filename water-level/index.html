@@ -21,12 +21,19 @@
       width: 220px;
       height: 220px;
       border-radius: 50%;
-      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      background: linear-gradient(
+        to bottom,
+        #ef4444 0%,
+        #ef4444 20%,
+        #f97316 20%,
+        #f97316 50%,
+        #0ea5e9 50%,
+        #0ea5e9 100%
+      );
       position: relative;
       overflow: hidden;
       margin: 0 auto;
       box-shadow: inset 0 6px 15px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.05);
-      transition: background 0.5s ease;
     }
 
     /* Scales inside the circle */
@@ -114,22 +121,25 @@
         </span>
       </div>
       
-      <div class="flex items-center justify-center py-6">
-        <!-- Visual Circular Tank -->
-        <div class="relative flex items-center justify-center w-full">
+      <div class="flex items-center justify-center py-6 w-full max-w-sm mx-auto">
+        <!-- Visual Circular Tank Wrapper -->
+        <div class="relative w-full h-[220px]">
           
-          <div class="water-circle" id="waterCircle">
-            
-            <!-- Scale marks (0.0 to 1.0) -->
-            <div class="scale-mark" style="bottom: 80%;"></div>
-            <div class="scale-text" style="bottom: 80%;">0.80 วิกฤต</div>
-            
-            <div class="scale-mark" style="bottom: 50%;"></div>
-            <div class="scale-text" style="bottom: 50%;">0.50 เฝ้าระวัง</div>
-            
-            <div class="scale-mark" style="bottom: 20%;"></div>
-            <div class="scale-text" style="bottom: 20%;">0.20 ปกติ</div>
+          <!-- Scale marks spanning outside the circle -->
+          <div class="absolute w-full border-b-2 border-dashed border-red-300 pointer-events-none z-10" style="bottom: 80%; left: 0;">
+             <span class="absolute left-0 bottom-1 text-xs text-red-500 font-bold bg-white/80 px-1 rounded">0.80 วิกฤต</span>
+          </div>
+          
+          <div class="absolute w-full border-b-2 border-dashed border-orange-300 pointer-events-none z-10" style="bottom: 50%; left: 0;">
+             <span class="absolute left-0 bottom-1 text-xs text-orange-500 font-bold bg-white/80 px-1 rounded">0.50 เฝ้าระวัง</span>
+          </div>
+          
+          <div class="absolute w-full border-b-2 border-dashed border-blue-200 pointer-events-none z-10" style="bottom: 20%; left: 0;">
+             <span class="absolute left-0 bottom-1 text-xs text-blue-500 font-bold bg-white/80 px-1 rounded">0.20 ปกติ</span>
+          </div>
 
+          <!-- The Circle itself -->
+          <div class="water-circle absolute inset-x-0 mx-auto" id="waterCircle">
             <!-- Waves that hide the top part -->
             <div id="wave2" class="wave-overlay-2" style="bottom: 50%;"></div>
             <div id="wave1" class="wave-overlay" style="bottom: 50%;"></div>
@@ -282,8 +292,8 @@
         bankTextEl.className = "text-2xl font-bold text-red-600 mt-1";
       }
 
-      // Tank Fill Height (max 1.05m to show overflow slightly)
-      const maxDisplay = 1.05;
+      // Tank Fill Height (max 1.00m to align perfectly with CSS gradient percentages)
+      const maxDisplay = 1.00;
       let percent = (level / maxDisplay) * 100;
       if (percent > 100) percent = 100;
       if (percent < 0) percent = 0;
@@ -324,9 +334,6 @@
         
       }
 
-      // Keep water always blue
-      waterCircle.style.background = 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)';
-      
       const levelTextBox = document.getElementById('levelTextBox');
       if (levelTextBox) {
           levelTextBox.className = `bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg border-2 text-center transform translate-y-4 ${levelTextBorder}`;
