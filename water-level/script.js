@@ -70,11 +70,12 @@ function selectStation(stationName) {
         const btns = document.querySelectorAll('.' + nodes[key]);
         btns.forEach(btn => {
             const circle = btn.querySelector('.node-circle');
+            const ringColor = circle.dataset.ringColor || 'ring-blue-500';
             
             if (key === stationName) {
-                circle.classList.add('scale-125', 'shadow-xl', 'shadow-slate-400/50');
+                circle.classList.add('ring-4', 'ring-offset-2', ringColor, 'scale-110');
             } else {
-                circle.classList.remove('scale-125', 'shadow-xl', 'shadow-slate-400/50');
+                circle.classList.remove('ring-4', 'ring-offset-2', 'ring-red-500', 'ring-orange-500', 'ring-blue-500', 'scale-110');
             }
         });
     });
@@ -273,9 +274,9 @@ function getTrend(stationName) {
 }
 
 function getStatusForLevel(val) {
-    if (val >= CRITICAL_LEVEL) return { border: 'border-red-500', text: 'text-red-600', code: 'red' };
-    if (val >= WARNING_LEVEL) return { border: 'border-orange-500', text: 'text-orange-600', code: 'orange' };
-    return { border: 'border-blue-500', text: 'text-blue-600', code: 'blue' };
+    if (val >= CRITICAL_LEVEL) return { bg: 'bg-red-500', text: 'text-white', ring: 'ring-red-500' };
+    if (val >= WARNING_LEVEL) return { bg: 'bg-orange-500', text: 'text-white', ring: 'ring-orange-500' };
+    return { bg: 'bg-blue-500', text: 'text-white', ring: 'ring-blue-500' };
 }
 
 function updateNodeColor(stationKey, nodeClass) {
@@ -290,12 +291,21 @@ function updateNodeColor(stationKey, nodeClass) {
         const circle = btn.querySelector('.node-circle');
         const span = circle.querySelector('span');
         
-        // Reset borders and texts
-        circle.classList.remove('border-slate-300', 'border-red-500', 'border-orange-500', 'border-blue-500');
-        span.classList.remove('text-slate-500', 'text-red-600', 'text-orange-600', 'text-blue-600');
+        // Reset old backgrounds and text
+        circle.classList.remove('bg-slate-300', 'bg-red-500', 'bg-orange-500', 'bg-blue-500');
+        span.classList.remove('text-slate-500', 'text-red-600', 'text-orange-600', 'text-blue-600', 'text-white');
         
-        circle.classList.add(colors.border);
+        circle.classList.add(colors.bg);
         span.classList.add(colors.text);
+        
+        // Store ring color for selectStation
+        circle.dataset.ringColor = colors.ring;
+        
+        // If it is currently selected, re-apply the correct ring
+        if (circle.classList.contains('ring-4')) {
+            circle.classList.remove('ring-red-500', 'ring-orange-500', 'ring-blue-500');
+            circle.classList.add(colors.ring);
+        }
         
         // Show water level in circle
         if (validData.length > 0) {
