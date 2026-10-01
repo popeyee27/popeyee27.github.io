@@ -1,6 +1,7 @@
 name: Tailwind CSS Build
 
 on:
+  workflow_dispatch: # Allows manual triggering from GitHub UI
   push:
     branches:
       - main
@@ -9,6 +10,7 @@ on:
       - 'water-level/input.css'
       - 'water-level/script.js'
       - 'water-level/package.json'
+      - '.github/workflows/tailwind-build.yml'
 
 jobs:
   build:
