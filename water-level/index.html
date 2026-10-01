@@ -14,52 +14,57 @@
 </head>
 <body class="text-gray-800 antialiased bg-slate-50">
 
-  <!-- Background SVG Map (Sticky, Full Screen Width) -->
+  <!-- Background SVG Map (Sticky, Full Screen Width but Constrained Content) -->
   <div class="fixed top-0 left-0 w-full h-[50vh] z-0 bg-[#f8fafc] overflow-hidden border-b border-slate-200">
     
-    <!-- Stylized Background Map -->
-    <svg class="absolute inset-0 w-full h-full">
+    <!-- Centered Coordinate System Container -->
+    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-[320px] h-full">
       
-      <!-- Fake Parks -->
-      <polygon points="0,0 200,0 250,150 0,150" fill="#dcfce3" opacity="0.5" />
-      <polygon points="100%,0 100%,200 calc(100% - 200px),200 calc(100% - 150px),0" fill="#dcfce3" opacity="0.5" />
-      <polygon points="0,100% 0,calc(100% - 100px) 300,calc(100% - 100px) 350,100%" fill="#dcfce3" opacity="0.5" />
-      
-      <!-- Fake Roads (Gray) -->
-      <line x1="25%" y1="0" x2="25%" y2="100%" stroke="#f1f5f9" stroke-width="8" />
-      <line x1="75%" y1="0" x2="75%" y2="100%" stroke="#f1f5f9" stroke-width="8" />
-      <line x1="0" y1="35%" x2="100%" y2="35%" stroke="#f1f5f9" stroke-width="8" />
-      
-      <!-- Motorway (Thick Road at 50% height) -->
-      <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#e2e8f0" stroke-width="16" />
-      <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="10 10" />
+      <!-- Stylized Background Map (overflow-visible to span full screen) -->
+      <svg class="absolute inset-0 w-full h-full overflow-visible">
+        
+        <!-- Fake Parks (Large rectangles) -->
+        <rect x="-800" y="-200" width="700" height="40%" fill="#dcfce3" opacity="0.6" />
+        <rect x="240" y="5%" width="800" height="30%" fill="#dcfce3" opacity="0.6" />
+        <rect x="-800" y="85%" width="900" height="50%" fill="#dcfce3" opacity="0.6" />
+        <rect x="200" y="85%" width="800" height="50%" fill="#dcfce3" opacity="0.6" />
+        
+        <!-- Fake Roads (Gray) -->
+        <line x1="-150" y1="-500" x2="-150" y2="1500" stroke="#f1f5f9" stroke-width="8" />
+        <line x1="40" y1="-500" x2="40" y2="1500" stroke="#f1f5f9" stroke-width="8" />
+        <line x1="320" y1="-500" x2="320" y2="1500" stroke="#f1f5f9" stroke-width="8" />
+        <line x1="-2000" y1="35%" x2="2000" y2="35%" stroke="#f1f5f9" stroke-width="8" />
+        <line x1="-2000" y1="90%" x2="2000" y2="90%" stroke="#f1f5f9" stroke-width="8" />
+        
+        <!-- Motorway (Thick Road at 50% height) -->
+        <line x1="-2000" y1="50%" x2="2000" y2="50%" stroke="#e2e8f0" stroke-width="16" />
+        <line x1="-2000" y1="50%" x2="2000" y2="50%" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="10 10" />
 
-      <!-- Base Canals (Light Blue) -->
-      <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#bae6fd" stroke-width="12" />
-      <line x1="0" y1="75%" x2="100%" y2="75%" stroke="#bae6fd" stroke-width="12" />
-      
-    </svg>
+        <!-- Base Canals (Light Blue) -->
+        <line x1="160" y1="-500" x2="160" y2="1500" stroke="#bae6fd" stroke-width="12" />
+        <line x1="-2000" y1="75%" x2="2000" y2="75%" stroke="#bae6fd" stroke-width="12" />
+        
+      </svg>
 
-    <!-- Active Flow Paths (Foreground) -->
-    <svg class="absolute inset-0 w-full h-full" id="flowMapSvg">
-      <!-- Flow 130 -> 131 -->
-      <line id="path-130-131-a" x1="50%" y1="25%" x2="50%" y2="50%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
-      
-      <!-- Flow 131 -> Corner -->
-      <line id="path-131-39-a" x1="50%" y1="50%" x2="50%" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
-      
-      <!-- Flow Corner -> 39 -->
-      <line id="path-131-39-b" x1="50%" y1="75%" x2="75%" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
-      
-      <!-- Corner Joint Dot -->
-      <circle cx="50%" cy="75%" r="4" fill="currentColor" class="text-slate-400 transition-colors duration-500" id="path-131-39-joint" />
-    </svg>
+      <!-- Active Flow Paths (Foreground) -->
+      <svg class="absolute inset-0 w-full h-full overflow-visible" id="flowMapSvg">
+        <!-- Flow 130 -> 131 -->
+        <line id="path-130-131-a" x1="160" y1="25%" x2="160" y2="50%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        
+        <!-- Flow 131 -> Corner -->
+        <line id="path-131-39-a" x1="160" y1="50%" x2="160" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        
+        <!-- Flow Corner -> 39 -->
+        <line id="path-131-39-b" x1="160" y1="75%" x2="260" y2="75%" stroke-width="8" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        
+        <!-- Corner Joint Dot -->
+        <circle cx="160" cy="75%" r="4" fill="currentColor" class="text-slate-400 transition-colors duration-500" id="path-131-39-joint" />
+      </svg>
 
-    <!-- Map Nodes Overlay (Percentage based) -->
-    <div class="absolute inset-0 w-full h-full max-w-5xl mx-auto relative">
+      <!-- Map Nodes Overlay (Constrained width) -->
       
       <!-- Node 130 (Top North) -->
-      <button onclick="selectStation('คลองสองต้นนุ่น')" class="station-node node-130 absolute top-[25%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group">
+      <button onclick="selectStation('คลองสองต้นนุ่น')" class="station-node node-130 absolute top-[25%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="left: 160px;">
         <div class="node-circle w-10 h-10 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
           <span class="text-xs font-bold text-slate-500">130</span>
         </div>
@@ -67,7 +72,7 @@
       </button>
 
       <!-- Node 131 (Middle - Motorway) -->
-      <button onclick="selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)')" class="station-node node-131 absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group">
+      <button onclick="selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)')" class="station-node node-131 absolute top-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="left: 160px;">
         <div class="node-circle w-10 h-10 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
           <span class="text-xs font-bold text-slate-500">131</span>
         </div>
@@ -75,7 +80,7 @@
       </button>
 
       <!-- Node 39 (East - Prawet) -->
-      <button onclick="selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')" class="station-node node-39 absolute top-[75%] left-[75%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group">
+      <button onclick="selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')" class="station-node node-39 absolute top-[75%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="left: 260px;">
         <div class="node-circle w-10 h-10 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
           <span class="text-xs font-bold text-slate-500">39</span>
         </div>
