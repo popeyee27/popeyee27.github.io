@@ -6,13 +6,23 @@ let allStationsData = {};
 let currentStation = 'คลองสองต้นนุ่น';
 let chartInstance = null;
 
+let speedUpper = 1;
+let speedLower = 1;
+let offsetUpper = 0;
+let offsetLower = 0;
+
 document.addEventListener('DOMContentLoaded', () => {
     // animate flow paths natively
-    let offset = 0;
     setInterval(() => {
-        offset -= 1;
-        document.querySelectorAll('.flow-line').forEach(p => {
-            p.style.strokeDashoffset = offset + 'px';
+        offsetUpper -= speedUpper;
+        offsetLower -= speedLower;
+        
+        document.querySelectorAll('#path-130-131-a').forEach(p => {
+            p.style.strokeDashoffset = offsetUpper + 'px';
+        });
+        
+        document.querySelectorAll('#path-131-39-a, #path-131-39-b').forEach(p => {
+            p.style.strokeDashoffset = offsetLower + 'px';
         });
     }, 50);
 });
@@ -53,20 +63,11 @@ function selectStation(stationName) {
         const btns = document.querySelectorAll('.' + nodes[key]);
         btns.forEach(btn => {
             const circle = btn.querySelector('.node-circle');
-            const text = btn.querySelector('.node-text');
             
             if (key === stationName) {
-                circle.classList.remove('border-slate-300');
-                circle.classList.add('border-blue-600', 'scale-110');
-                circle.querySelector('span').classList.replace('text-slate-500', 'text-blue-600');
-                text.classList.replace('text-slate-600', 'text-blue-700');
-                text.classList.replace('text-slate-500', 'text-blue-700');
+                circle.classList.add('ring-4', 'ring-blue-400', 'ring-offset-2', 'scale-110');
             } else {
-                circle.classList.add('border-slate-300');
-                circle.classList.remove('border-blue-600', 'scale-110');
-                circle.querySelector('span').classList.replace('text-blue-600', 'text-slate-500');
-                text.classList.replace('text-blue-700', 'text-slate-600');
-                text.classList.replace('text-blue-700', 'text-slate-500');
+                circle.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-2', 'scale-110');
             }
         });
     });
@@ -252,16 +253,50 @@ function updateWarningBanner(stationName) {
 function getTrend(stationName) {
     const data = allStationsData[stationName] || [];
     const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
-    if(validData.length < 12) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ' };
+    if(validData.length < 12) return { status: 'unknown', text: 'ข้อมูลไม่เพียงพอ', diff: 0 };
     
     // Compare latest vs 1-2 hours ago (about 6-12 records ago since it's every 10 mins)
     const latest = parseFloat(validData[validData.length - 1]['ระดับน้ำด้านใน ม.รทก.']);
     const old = parseFloat(validData[validData.length - 7]['ระดับน้ำด้านใน ม.รทก.']); // ~1 hour ago
     
     const diff = latest - old;
-    if (diff <= -0.02) return { status: 'down', text: `กำลังลดลง (${diff.toFixed(2)} ม./ชม.)` };
-    if (diff >= 0.02) return { status: 'up', text: `กำลังเพิ่มขึ้น (+${diff.toFixed(2)} ม./ชม.)` };
-    return { status: 'stable', text: 'ทรงตัว' };
+    if (diff <= -0.02) return { status: 'down', text: `กำลังลดลง (${diff.toFixed(2)} ม./ชม.)`, diff: diff };
+    if (diff >= 0.02) return { status: 'up', text: `กำลังเพิ่มขึ้น (+${diff.toFixed(2)} ม./ชม.)`, diff: diff };
+    return { status: 'stable', text: 'ทรงตัว', diff: diff };
+}
+
+function getStatusForLevel(val) {
+    if (val >= CRITICAL_LEVEL) return { border: 'border-red-500', text: 'text-red-600', code: 'red' };
+    if (val >= WARNING_LEVEL) return { border: 'border-orange-500', text: 'text-orange-600', code: 'orange' };
+    return { border: 'border-blue-500', text: 'text-blue-600', code: 'blue' };
+}
+
+function updateNodeColor(stationKey, nodeClass) {
+    const data = allStationsData[stationKey] || [];
+    const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
+    let val = 0;
+    if (validData.length > 0) val = parseFloat(validData[validData.length - 1]['ระดับน้ำด้านใน ม.รทก.']);
+    
+    const colors = getStatusForLevel(val);
+    const btns = document.querySelectorAll('.' + nodeClass);
+    btns.forEach(btn => {
+        const circle = btn.querySelector('.node-circle');
+        const span = circle.querySelector('span');
+        
+        // Reset borders and texts
+        circle.classList.remove('border-slate-300', 'border-red-500', 'border-orange-500', 'border-blue-500');
+        span.classList.remove('text-slate-500', 'text-red-600', 'text-orange-600', 'text-blue-600');
+        
+        circle.classList.add(colors.border);
+        span.classList.add(colors.text);
+    });
+}
+
+function getFlowProperties(diff) {
+    // diff < 0 means water is dropping
+    if (diff <= -0.05) return { stroke: 'stroke-green-500', text: 'text-green-500', speed: 3 }; // ลดลงมาก (ขยับไว)
+    if (diff <= -0.01) return { stroke: 'stroke-blue-400', text: 'text-blue-400', speed: 1.5 }; // ขยับไวขึ้นกว่าปกติ
+    return { stroke: 'stroke-red-500', text: 'text-red-500', speed: 0.2 }; // ไม่ขยับ หรือขยับน้อยมาก หรือน้ำขึ้น
 }
 
 function analyzeDrainage() {
@@ -272,54 +307,61 @@ function analyzeDrainage() {
     const s131 = getTrend('คลองสองต้นนุ่น (มอเตอร์เวย์)'); // กลางน้ำ
     const s39 = getTrend('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)'); // ปลายน้ำ
     
+    // Update node colors based on indicator (absolute level)
+    updateNodeColor('คลองสองต้นนุ่น', 'node-130');
+    updateNodeColor('คลองสองต้นนุ่น (มอเตอร์เวย์)', 'node-131');
+    updateNodeColor('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)', 'node-39');
+    
     let html = `<ul class="space-y-2 mb-3">
         <li><span class="font-bold text-slate-700">📌 ต้นน้ำ (130 ซ.ร่มเกล้า 20):</span> ${s130.text}</li>
         <li><span class="font-bold text-slate-700">📌 กลางน้ำ (131 มอเตอร์เวย์):</span> ${s131.text}</li>
         <li><span class="font-bold text-slate-700">📌 ปลายน้ำ (39 ปตร.ลาดกระบัง):</span> ${s39.text}</li>
     </ul>`;
     
-    // Update the SVG flow lines based on trend
-    const pathsUpper = [
-        document.getElementById('path-130-131-a')
-    ];
+    // Determine flow speeds and colors for Upper (130->131) and Lower (131->39)
+    const upperProps = getFlowProperties(s130.diff || 0);
+    const lowerProps = getFlowProperties(s131.diff || 0);
+    
+    speedUpper = upperProps.speed;
+    speedLower = lowerProps.speed;
+    
+    const pathsUpper = [document.getElementById('path-130-131-a')];
     const pathsLower = [
         document.getElementById('path-131-39-a'),
         document.getElementById('path-131-39-b'),
         document.getElementById('path-131-39-joint')
     ];
     
-    // Reset classes
-    [...pathsUpper, ...pathsLower].forEach(el => {
+    // Apply classes
+    pathsUpper.forEach(el => {
         if (!el) return;
-        el.className.baseVal = el.tagName === 'circle' ? 'text-slate-300 transition-colors duration-500' : 'flow-line stroke-slate-300 transition-colors duration-500';
+        el.className.baseVal = el.tagName === 'circle' ? `${upperProps.text} transition-colors duration-500` : `flow-line ${upperProps.stroke} transition-colors duration-500`;
     });
     
+    pathsLower.forEach(el => {
+        if (!el) return;
+        el.className.baseVal = el.tagName === 'circle' ? `${lowerProps.text} transition-colors duration-500` : `flow-line ${lowerProps.stroke} transition-colors duration-500`;
+    });
+    
+    // Generate overall summary
     if (s130.status === 'down') {
         if (s131.status !== 'down' && s39.status !== 'down') {
             html += `<div class="p-3 bg-red-100 text-red-800 rounded border border-red-200">
                 <strong>⚠️ ตรวจพบความผิดปกติ:</strong> สถานีต้นน้ำ (130) ระดับน้ำกำลังลดลง แต่สถานีถัดไป (131 และ 39) ยังไม่ลดตาม อาจมีสิ่งกีดขวางทางน้ำ หรือการระบายน้ำล่าช้า
             </div>`;
-            pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-red-500' : ' stroke-red-500'; });
-            pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-red-500' : ' stroke-red-500'; });
         } else {
             html += `<div class="p-3 bg-green-100 text-green-800 rounded border border-green-200">
                 <strong>✅ การระบายน้ำปกติ:</strong> น้ำถูกพร่องลงอย่างต่อเนื่องไปสู่ปลายน้ำ
             </div>`;
-            pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-blue-400' : ' stroke-blue-400'; });
-            pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-blue-400' : ' stroke-blue-400'; });
         }
     } else if (s130.status === 'up') {
          html += `<div class="p-3 bg-orange-100 text-orange-800 rounded border border-orange-200">
                 <strong>⏳ แจ้งเตือน:</strong> สถานีต้นน้ำ (130) มีระดับน้ำเพิ่มขึ้น โปรดเฝ้าระวังมวลน้ำที่จะไหลผ่าน 131 ไปยัง 39 ในอีก 1-2 ชั่วโมง
             </div>`;
-         pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-orange-400' : ' stroke-orange-400'; });
-         pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-orange-400' : ' stroke-orange-400'; });
     } else {
          html += `<div class="p-3 bg-slate-200 text-slate-800 rounded border border-slate-300">
                 <strong>ℹ️ สถานการณ์:</strong> ระดับน้ำทรงตัว ไม่มีสัญญาณการเร่งระบายน้ำที่ชัดเจน
             </div>`;
-         pathsUpper.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-slate-300' : ' stroke-slate-300'; });
-         pathsLower.forEach(el => { if(el) el.className.baseVal += el.tagName === 'circle' ? ' text-slate-300' : ' stroke-slate-300'; });
     }
     
     box.innerHTML = html;
