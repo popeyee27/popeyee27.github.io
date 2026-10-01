@@ -1,21 +1,28 @@
 import urllib.request
 import urllib.error
 import json
+import re
 import csv
 import sys
 import ssl
 import os
-from datetime import datetime, timedelta
+import time
 
 output_file = sys.argv[1] if len(sys.argv) > 1 else 'cleaned_water_level.csv'
 
-THAIWATER_STATIONS = [
-    (172, 'คลองสองต้นนุ่น'),
-    (173, 'คลองสองต้นนุ่น (มอเตอร์เวย์)'),
-    (81,  'คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')
+BMA_STATIONS = [
+    (130, 'คลองสองต้นนุ่น'),
+    (131, 'คลองสองต้นนุ่น (มอเตอร์เวย์)'),
+    (39,  'คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')
 ]
 
-def format_thai_dt(iso_str):
+THAIWATER_MAP = {
+    130: 172,
+    131: 173,
+    39: 81
+}
+
+def format_thai_dt_from_iso(iso_str):
     date_part, time_part = iso_str.split(' ')
     y, m, d = date_part.split('-')
     year_be = int(y) + 543
@@ -39,59 +46,95 @@ if file_exists:
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
-headers = {
+
+HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Accept': 'application/json'
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1'
 }
 
 new_data = []
 
-today = datetime.now()
-past = today - timedelta(days=2)
-start_date = past.strftime('%Y-%m-%d')
-end_date = today.strftime('%Y-%m-%d')
+def fetch_bma_station_with_retry(station_id, canal_name, max_retries=5, delay=3):
+    url = f"https://weather.bangkok.go.th/water/StationDetail?id={station_id}"
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"[{canal_name}] Fetching BMA URL: attempt {attempt}/{max_retries}...")
+            req = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(req, context=ctx, timeout=20) as response:
+                html = response.read().decode('utf-8')
+                tbody_match = re.search(r'<tbody>(.*?)</tbody>', html, re.DOTALL | re.IGNORECASE)
+                if tbody_match:
+                    rows = re.findall(r'<tr>(.*?)</tr>', tbody_match.group(1), re.DOTALL | re.IGNORECASE)
+                    parsed_rows = []
+                    for row in rows:
+                        cols = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
+                        if len(cols) >= 3:
+                            dt = cols[1].strip()
+                            val = cols[2].strip()
+                            parsed_rows.append((canal_name, dt, val))
+                    if parsed_rows:
+                        print(f"[{canal_name}] Successfully fetched {len(parsed_rows)} rows from BMA.")
+                        return parsed_rows
+        except urllib.error.HTTPError as e:
+            print(f"[{canal_name}] HTTP Error {e.code}: {e.reason} (attempt {attempt}/{max_retries})", file=sys.stderr)
+            if e.code == 403:
+                time.sleep(delay * attempt)
+            else:
+                time.sleep(delay)
+        except Exception as e:
+            print(f"[{canal_name}] Network/parse error: {e} (attempt {attempt}/{max_retries})", file=sys.stderr)
+            time.sleep(delay)
+    return None
 
-# 1. Fetch graph data for past 2 days
-for station_id, canal_name in THAIWATER_STATIONS:
-    url = f"https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=canal&station_id={station_id}&start_date={start_date}&end_date={end_date}"
+def fetch_thaiwater_backup():
+    print("Attempting backup fetch from ThaiWater API...")
+    backup_rows = []
     try:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, context=ctx, timeout=30) as response:
+        url = "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/canal_waterlevel"
+        req = urllib.request.Request(url, headers={'User-Agent': HEADERS['User-Agent'], 'Accept': 'application/json'})
+        with urllib.request.urlopen(req, context=ctx, timeout=20) as response:
             res_json = json.loads(response.read().decode('utf-8'))
-            graph_data = (res_json.get('data') or {}).get('graph_data') or []
-            for item in graph_data:
-                val = item.get('value')
-                dt_iso = item.get('datetime')
-                if val is not None and dt_iso:
-                    dt_thai = format_thai_dt(dt_iso)
-                    val_str = f"{float(val):.2f}"
-                    if (canal_name, dt_thai) not in existing_data:
-                        new_data.append([canal_name, dt_thai, val_str])
-                        existing_data.add((canal_name, dt_thai))
+            for item in res_json.get('data') or []:
+                sid = (item.get('station') or {}).get('id')
+                for bma_id, canal_name in BMA_STATIONS:
+                    if THAIWATER_MAP.get(bma_id) == sid:
+                        dt_iso = item.get('canal_datetime')
+                        val = item.get('canal_value')
+                        if val is not None and dt_iso:
+                            dt_thai = format_thai_dt_from_iso(dt_iso)
+                            val_str = f"{float(val):.2f}"
+                            backup_rows.append((canal_name, dt_thai, val_str))
     except Exception as e:
-        print(f"Error fetching waterlevel_graph for {canal_name}: {e}", file=sys.stderr)
+        print(f"Backup fetch from ThaiWater error: {e}", file=sys.stderr)
+    return backup_rows
 
-# 2. Fetch latest canal_waterlevel
-try:
-    url = "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/canal_waterlevel"
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, context=ctx, timeout=30) as response:
-        res_json = json.loads(response.read().decode('utf-8'))
-        for item in res_json.get('data') or []:
-            sid = (item.get('station') or {}).get('id')
-            matched = [name for s_id, name in THAIWATER_STATIONS if s_id == sid]
-            if matched:
-                canal_name = matched[0]
-                dt_iso = item.get('canal_datetime')
-                val = item.get('canal_value')
-                if val is not None and dt_iso:
-                    dt_thai = format_thai_dt(dt_iso)
-                    val_str = f"{float(val):.2f}"
-                    if (canal_name, dt_thai) not in existing_data:
-                        new_data.append([canal_name, dt_thai, val_str])
-                        existing_data.add((canal_name, dt_thai))
-except Exception as e:
-    print(f"Error fetching canal_waterlevel: {e}", file=sys.stderr)
+# Run scraping
+for station_id, canal_name in BMA_STATIONS:
+    rows = fetch_bma_station_with_retry(station_id, canal_name, max_retries=5, delay=3)
+    if rows:
+        for cname, dt, val in rows:
+            if (cname, dt) not in existing_data:
+                new_data.append([cname, dt, val])
+                existing_data.add((cname, dt))
+    else:
+        print(f"[{canal_name}] All BMA attempts failed (403 or error). Will use backup source.")
+
+# If any station failed or no new data from BMA, check backup source
+if len(new_data) == 0:
+    backup_rows = fetch_thaiwater_backup()
+    for cname, dt, val in backup_rows:
+        if (cname, dt) not in existing_data:
+            new_data.append([cname, dt, val])
+            existing_data.add((cname, dt))
 
 if new_data:
     mode = 'a' if file_exists else 'w'
