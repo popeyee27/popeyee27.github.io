@@ -17,17 +17,22 @@
 
   <!-- Background SVG Map (Sticky) -->
   <div class="fixed top-0 left-0 w-full h-[50vh] z-0 bg-slate-100 flex items-center justify-center overflow-hidden border-b border-slate-200">
-    <svg class="absolute inset-0 w-full h-full" id="flowMapSvg">
-      <!-- Canal path 130 -> 131 -->
-      <path id="path-130-131" d="M 50% 15% L 50% 50%" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
-      <!-- Canal path 131 -> 39 -->
-      <path id="path-131-39" d="M 50% 50% Q 50% 85% 75% 85%" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
-    </svg>
+    
+    <!-- Fixed Size Map Container to keep SVG paths and HTML buttons aligned perfectly -->
+    <div class="relative w-[320px] h-[320px]">
+      
+      <!-- SVG Paths -->
+      <svg width="320" height="320" viewBox="0 0 320 320" id="flowMapSvg" class="absolute inset-0">
+        <!-- Canal path 130 -> 131 -->
+        <path id="path-130-131" d="M 160 48 L 160 160" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
+        <!-- Canal path 131 -> 39 -->
+        <path id="path-131-39" d="M 160 160 Q 160 272 240 272" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
+      </svg>
 
-    <!-- Map Nodes Overlay -->
-    <div class="absolute inset-0 w-full h-full">
+      <!-- Map Nodes Overlay (Absolute pixel coords) -->
+      
       <!-- Node 130 (Top) -->
-      <button onclick="selectStation('คลองสองต้นนุ่น')" id="node-130" class="station-node absolute top-[15%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group">
+      <button onclick="selectStation('คลองสองต้นนุ่น')" id="node-130" class="station-node absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 48px; left: 160px;">
         <div class="node-circle w-12 h-12 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
           <span class="text-sm font-bold text-slate-500">130</span>
         </div>
@@ -35,7 +40,7 @@
       </button>
 
       <!-- Node 131 (Middle) -->
-      <button onclick="selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)')" id="node-131" class="station-node absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group">
+      <button onclick="selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)')" id="node-131" class="station-node absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 160px; left: 160px;">
         <div class="node-circle w-12 h-12 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
           <span class="text-sm font-bold text-slate-500">131</span>
         </div>
@@ -43,12 +48,13 @@
       </button>
 
       <!-- Node 39 (Bottom Right) -->
-      <button onclick="selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')" id="node-39" class="station-node absolute top-[85%] left-[75%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group">
+      <button onclick="selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')" id="node-39" class="station-node absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 272px; left: 240px;">
         <div class="node-circle w-12 h-12 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
           <span class="text-sm font-bold text-slate-500">39</span>
         </div>
         <span class="node-text text-[0.65rem] sm:text-xs font-semibold text-slate-600 mt-1 bg-white/80 px-2 rounded-full shadow-sm whitespace-nowrap">ปตร.ลาดกระบัง (ปลายน้ำ)</span>
       </button>
+
     </div>
   </div>
 
