@@ -17,41 +17,63 @@
   <!-- Background SVG Map (Sticky) -->
   <div class="fixed top-0 left-0 w-full h-[50vh] z-0 bg-slate-100 flex items-center justify-center overflow-hidden border-b border-slate-200">
     
-    <!-- Fixed Size Map Container to keep SVG paths and HTML buttons aligned perfectly -->
-    <div class="relative w-[320px] h-[320px]">
+    <!-- Fixed Size Map Container -->
+    <div class="relative w-[320px] h-[320px] bg-[#f8fafc] rounded-2xl shadow-inner border border-slate-200 overflow-hidden">
       
-      <!-- SVG Paths -->
-      <svg width="320" height="320" viewBox="0 0 320 320" id="flowMapSvg" class="absolute inset-0">
-        <!-- Canal path 130 -> 131 -->
-        <path id="path-130-131" d="M 160 48 L 160 160" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
-        <!-- Canal path 131 -> 39 -->
-        <path id="path-131-39" d="M 160 160 Q 160 272 240 272" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-300 transition-colors duration-500" />
+      <!-- Stylized Background Map (Roads, Parks, Waterways) -->
+      <svg width="320" height="320" viewBox="0 0 320 320" class="absolute inset-0">
+        <!-- Fake Parks (Green) -->
+        <path d="M 20 20 L 80 20 L 100 80 L 20 80 Z" fill="#dcfce3" opacity="0.7" />
+        <path d="M 160 20 L 300 20 L 280 120 L 160 120 Z" fill="#dcfce3" opacity="0.7" />
+        <path d="M 20 240 L 100 240 L 100 300 L 20 300 Z" fill="#dcfce3" opacity="0.7" />
+        <path d="M 180 260 L 300 260 L 300 320 L 160 320 Z" fill="#dcfce3" opacity="0.7" />
+        
+        <!-- Base Canals (Light Blue) -->
+        <path d="M 120 0 L 120 320" stroke="#bae6fd" stroke-width="12" fill="none" />
+        <path d="M 0 220 L 320 220" stroke="#bae6fd" stroke-width="12" fill="none" />
+        
+        <!-- Fake Roads (Gray) -->
+        <path d="M 60 0 L 60 320 M 200 0 L 200 320 M 280 0 L 280 320" stroke="#f1f5f9" stroke-width="6" fill="none" />
+        <path d="M 0 100 L 320 100 M 0 280 L 320 280" stroke="#f1f5f9" stroke-width="6" fill="none" />
+        
+        <!-- Motorway (Thick Road) -->
+        <path d="M 0 190 L 320 190" stroke="#e2e8f0" stroke-width="12" fill="none" />
+        <!-- Motorway Toll/Bridge details -->
+        <path d="M 100 190 L 140 190" stroke="#cbd5e1" stroke-width="14" fill="none" />
       </svg>
 
-      <!-- Map Nodes Overlay (Absolute pixel coords) -->
+      <!-- Active Flow Paths (Foreground) -->
+      <svg width="320" height="320" viewBox="0 0 320 320" id="flowMapSvg" class="absolute inset-0">
+        <!-- Flow 130 -> 131 -->
+        <path id="path-130-131" d="M 120 60 L 120 170" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+        <!-- Flow 131 -> 39 -->
+        <path id="path-131-39" d="M 120 170 L 120 205 Q 120 220 135 220 L 240 220" stroke-width="8" fill="none" stroke-linecap="round" class="flow-line stroke-slate-400 transition-colors duration-500" />
+      </svg>
+
+      <!-- Map Nodes Overlay -->
       
-      <!-- Node 130 (Top) -->
-      <button onclick="selectStation('คลองสองต้นนุ่น')" class="station-node node-130 absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 48px; left: 160px;">
-        <div class="node-circle w-12 h-12 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
-          <span class="text-sm font-bold text-slate-500">130</span>
+      <!-- Node 130 (Top North) -->
+      <button onclick="selectStation('คลองสองต้นนุ่น')" class="station-node node-130 absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 60px; left: 120px;">
+        <div class="node-circle w-10 h-10 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
+          <span class="text-xs font-bold text-slate-500">130</span>
         </div>
-        <span class="node-text text-[0.65rem] sm:text-xs font-semibold text-slate-600 mt-1 bg-white/80 px-2 rounded-full shadow-sm whitespace-nowrap">ซ.ร่มเกล้า 20 (ต้นน้ำ)</span>
+        <span class="node-text text-[0.6rem] font-semibold text-slate-600 mt-1 bg-white/90 px-2 rounded-full shadow-sm whitespace-nowrap">ซ.ร่มเกล้า 20</span>
       </button>
 
-      <!-- Node 131 (Middle) -->
-      <button onclick="selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)')" class="station-node node-131 absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 160px; left: 160px;">
-        <div class="node-circle w-12 h-12 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
-          <span class="text-sm font-bold text-slate-500">131</span>
+      <!-- Node 131 (Middle - Motorway) -->
+      <button onclick="selectStation('คลองสองต้นนุ่น (มอเตอร์เวย์)')" class="station-node node-131 absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 170px; left: 120px;">
+        <div class="node-circle w-10 h-10 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
+          <span class="text-xs font-bold text-slate-500">131</span>
         </div>
-        <span class="node-text text-[0.65rem] sm:text-xs font-semibold text-slate-600 mt-1 bg-white/80 px-2 rounded-full shadow-sm whitespace-nowrap">มอเตอร์เวย์ (กลางน้ำ)</span>
+        <span class="node-text text-[0.6rem] font-semibold text-slate-600 mt-1 bg-white/90 px-2 rounded-full shadow-sm whitespace-nowrap">มอเตอร์เวย์</span>
       </button>
 
-      <!-- Node 39 (Bottom Right) -->
-      <button onclick="selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')" class="station-node node-39 absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 272px; left: 240px;">
-        <div class="node-circle w-12 h-12 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
-          <span class="text-sm font-bold text-slate-500">39</span>
+      <!-- Node 39 (East - Prawet) -->
+      <button onclick="selectStation('คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)')" class="station-node node-39 absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group" style="top: 220px; left: 240px;">
+        <div class="node-circle w-10 h-10 rounded-full bg-white border-4 border-slate-300 flex items-center justify-center shadow-md transition-all">
+          <span class="text-xs font-bold text-slate-500">39</span>
         </div>
-        <span class="node-text text-[0.65rem] sm:text-xs font-semibold text-slate-600 mt-1 bg-white/80 px-2 rounded-full shadow-sm whitespace-nowrap">ปตร.ลาดกระบัง (ปลายน้ำ)</span>
+        <span class="node-text text-[0.6rem] font-semibold text-slate-600 mt-1 bg-white/90 px-2 rounded-full shadow-sm whitespace-nowrap">ปตร.ลาดกระบัง</span>
       </button>
 
     </div>
