@@ -506,59 +506,78 @@ function updateEstimateUI(stationName, currentLevel) {
 
         rateEl.innerHTML = `น้ำลดเฉลี่ยชั่วโมงละ <span style="color: ${rateColor};" class="font-bold">${rateFormatted} ม.</span>`;
         rateEl.className = "text-xl sm:text-2xl font-bold text-slate-800 mt-1";
-
-        if (latestVal > 0.50) {
-            const distanceToWarning = latestVal - 0.50;
-            const hoursNeeded = distanceToWarning / dropRatePerHour;
-            const totalHours = Math.round(hoursNeeded);
-            const days = Math.floor(totalHours / 24);
-            const remainingHours = totalHours % 24;
-
-            let timeStr = '';
-            if (days > 0) {
-                timeStr = remainingHours > 0 ? `${days} วัน ${remainingHours} ชั่วโมง` : `${days} วัน`;
-            } else {
-                timeStr = `${Math.max(1, remainingHours)} ชั่วโมง`;
-            }
-
-            // Time color coding:
-            // เกิน 1 วัน (totalHours > 24) -> สีแดง (#dc2626)
-            // เกิน 12 ชั่วโมง -> สีเหลือง (#ca8a04)
-            // เกิน 3 ชั่วโมง -> สีฟ้า (#0284c7)
-            // ต่ำกว่า 3 ชั่วโมง -> สีเขียว (#16a34a)
-            let timeColor = '#16a34a';
-            if (totalHours > 24) {
-                timeColor = '#dc2626';
-            } else if (totalHours > 12) {
-                timeColor = '#ca8a04';
-            } else if (totalHours > 3) {
-                timeColor = '#0284c7';
-            } else {
-                timeColor = '#16a34a';
-            }
-
-            timeEl.innerHTML = `ใช้เวลาอีกประมาณ <span style="color: ${timeColor};" class="font-bold">${timeStr}</span> จะลงมาอยู่ในระดับเฝ้าระวัง`;
-            timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-slate-500";
-            timeEl.style.color = '';
-        } else {
-            timeEl.innerText = `ระดับน้ำอยู่ในเกณฑ์ปกติแล้ว`;
-            timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-green-600";
-            timeEl.style.color = '#16a34a';
-        }
     } else if (dropRatePerHour <= -0.0005) {
         const riseRate = Math.abs(dropRatePerHour);
         const rateFormatted = riseRate >= 0.01 ? riseRate.toFixed(2) : riseRate.toFixed(3);
         rateEl.innerHTML = `น้ำเพิ่มเฉลี่ยชั่วโมงละ <span style="color: #dc2626;" class="font-bold">${rateFormatted} ม.</span>`;
         rateEl.className = "text-xl sm:text-2xl font-bold text-slate-800 mt-1";
-        timeEl.innerText = `แนวโน้มระดับน้ำกำลังเพิ่มขึ้น`;
-        timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-red-500";
-        timeEl.style.color = '#ef4444';
     } else {
         rateEl.innerText = `ระดับน้ำทรงตัว`;
         rateEl.className = "text-xl sm:text-2xl font-bold text-slate-800 mt-1";
-        timeEl.innerText = `ไม่มีการเปลี่ยนแปลงในช่วง 24 ชม. ที่ผ่านมา`;
-        timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-slate-400";
-        timeEl.style.color = '#94a3b8';
+    }
+
+    // 2. ค้นหาการเปลี่ยนแปลงล่าสุดเพียงอันเดียว (ลด หรือ เพิ่ม)
+    let latestChange = null;
+    for (let i = validData.length - 1; i >= 1; i--) {
+        const cur = parseFloat(validData[i]['ระดับน้ำด้านใน ม.รทก.']);
+        const prev = parseFloat(validData[i - 1]['ระดับน้ำด้านใน ม.รทก.']);
+        if (cur < prev) {
+            latestChange = { isDrop: true, row: validData[i] };
+            break;
+        } else if (cur > prev) {
+            latestChange = { isDrop: false, row: validData[i] };
+            break;
+        }
+    }
+
+    if (latestChange) {
+        const eventDate = parseThaiDateTime(latestChange.row['วัน-เวลา']);
+        const now = new Date();
+        const diffMins = Math.max(0, Math.floor((now - eventDate) / 60000));
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        const parts = latestChange.row['วัน-เวลา'].split(' ');
+        const datePart = parts[0] || '';
+        const timePart = parts[1] || '';
+
+        let relStr = '';
+        if (diffDays >= 1) {
+            relStr = `${diffDays} วันที่แล้ว`;
+        } else if (diffHours >= 1) {
+            relStr = `${diffHours} ชั่วโมงที่แล้ว`;
+        } else if (diffMins > 0) {
+            relStr = `${diffMins} นาทีที่แล้ว`;
+        } else {
+            relStr = `สักครู่ที่ผ่านมา`;
+        }
+
+        let timeColor = '';
+        if (!latestChange.isDrop) {
+            // น้ำเพิ่ม -> สีแดงเสมอ
+            timeColor = '#dc2626';
+        } else {
+            // น้ำลด -> ตามเกณฑ์เวลา
+            if (diffDays >= 1) {
+                timeColor = '#dc2626'; // สีแดง (> 1 วัน)
+            } else if (diffHours >= 12) {
+                timeColor = '#ca8a04'; // สีเหลือง (> 12 ชม.)
+            } else if (diffHours >= 3) {
+                timeColor = '#0284c7'; // สีฟ้า (> 3 ชม.)
+            } else {
+                timeColor = '#16a34a'; // สีเขียว (ไม่เกิน 3 ชม.)
+            }
+        }
+
+        const timeDetail = diffDays >= 1 ? `${datePart} ${timePart}` : `${timePart} น.`;
+        const label = latestChange.isDrop ? 'น้ำลดล่าสุดเมื่อ' : 'น้ำเพิ่มล่าสุดเมื่อ';
+        timeEl.innerHTML = `${label} <span style="color: ${timeColor};" class="font-bold">${relStr}</span> <span class="text-slate-400 font-normal">(${timeDetail})</span>`;
+        timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-slate-500 text-right";
+        timeEl.style.color = '';
+    } else {
+        timeEl.innerHTML = `ระดับน้ำทรงตัวต่อเนื่องในประวัติ`;
+        timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-slate-400 text-right";
+        timeEl.style.color = '';
     }
 }
 
