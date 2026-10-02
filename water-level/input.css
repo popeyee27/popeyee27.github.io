@@ -87,3 +87,9 @@ body {
   stroke-dasharray: 12 12;
 }
 
+.items-end { align-items: flex-end; }
+.self-end { align-self: flex-end; }
+.text-right { text-align: right; }
+.ml-auto { margin-left: auto; }
+
+

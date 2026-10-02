@@ -1,4 +1,8 @@
-const BANK_LEVEL = 1.00;
+const BANK_LEVELS = {
+  'คลองสองต้นนุ่น': 1.00,
+  'คลองสองต้นนุ่น (มอเตอร์เวย์)': 2.00,
+  'คลองประเวศบุรีรมย์ (ปตร.ลาดกระบัง)': 1.98
+};
 const CRITICAL_LEVEL = 0.80;
 const WARNING_LEVEL = 0.50;
 
@@ -420,6 +424,144 @@ function analyzeDrainage() {
     box.innerHTML = html;
 }
 
+function parseThaiDateTime(str) {
+    if (!str) return new Date();
+    try {
+        const parts = str.split(' ');
+        const dateParts = parts[0].split('/');
+        const timeParts = parts[1].split(':');
+        const day = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const year = parseInt(dateParts[2], 10) - 543;
+        const hour = parseInt(timeParts[0], 10);
+        const minute = parseInt(timeParts[1], 10);
+        return new Date(year, month, day, hour, minute);
+    } catch (e) {
+        return new Date();
+    }
+}
+
+function updateEstimateUI(stationName, currentLevel) {
+    const rateEl = document.getElementById('estimateRateText');
+    const timeEl = document.getElementById('estimateTimeText');
+    if (!rateEl || !timeEl) return;
+
+    const data = allStationsData[stationName] || [];
+    const validData = data.filter(r => !isNaN(parseFloat(r['ระดับน้ำด้านใน ม.รทก.'])));
+
+    if (validData.length < 5) {
+        rateEl.innerText = '--';
+        timeEl.innerText = 'ข้อมูลไม่เพียงพอสำหรับประเมิน';
+        return;
+    }
+
+    const latestRow = validData[validData.length - 1];
+    const latestDate = parseThaiDateTime(latestRow['วัน-เวลา']);
+    const latestVal = currentLevel;
+
+    // Lookback window: up to 24 hours
+    const targetDate = new Date(latestDate.getTime() - (24 * 3600 * 1000));
+    let closestRow = null;
+    let minDiff = Infinity;
+
+    for (let i = 0; i < validData.length - 1; i++) {
+        const rDate = parseThaiDateTime(validData[i]['วัน-เวลา']);
+        const diff = Math.abs(rDate - targetDate);
+        if (diff < minDiff) {
+            minDiff = diff;
+            closestRow = validData[i];
+        }
+    }
+
+    if (!closestRow) {
+        rateEl.innerText = '--';
+        timeEl.innerText = '';
+        return;
+    }
+
+    const oldVal = parseFloat(closestRow['ระดับน้ำด้านใน ม.รทก.']);
+    const oldDate = parseThaiDateTime(closestRow['วัน-เวลา']);
+    const actualHours = Math.max(1, (latestDate - oldDate) / (1000 * 3600));
+
+    const dropTotal = oldVal - latestVal; // positive = water level dropped
+    const dropRatePerHour = dropTotal / actualHours;
+
+    if (dropRatePerHour >= 0.0005) {
+        const rateFormatted = dropRatePerHour >= 0.01 
+            ? dropRatePerHour.toFixed(2) 
+            : dropRatePerHour.toFixed(3);
+
+        // Color coding for drop rate:
+        // 0.02 ขึ้นไป -> สีเขียว (#16a34a)
+        // 0.01 ต่อ ชม -> สีฟ้า (#0284c7)
+        // เกิน 0.005 ต่อชั่วโมง (และระดับช้า เช่น 0.002) -> สีเหลือง (#ca8a04)
+        let rateColor = '#ca8a04';
+        if (dropRatePerHour >= 0.02) {
+            rateColor = '#16a34a';
+        } else if (dropRatePerHour >= 0.01) {
+            rateColor = '#0284c7';
+        } else {
+            rateColor = '#ca8a04';
+        }
+
+        rateEl.innerHTML = `น้ำลดเฉลี่ยชั่วโมงละ <span style="color: ${rateColor};" class="font-bold">${rateFormatted} ม.</span>`;
+        rateEl.className = "text-xl sm:text-2xl font-bold text-slate-800 mt-1";
+
+        if (latestVal > 0.50) {
+            const distanceToWarning = latestVal - 0.50;
+            const hoursNeeded = distanceToWarning / dropRatePerHour;
+            const totalHours = Math.round(hoursNeeded);
+            const days = Math.floor(totalHours / 24);
+            const remainingHours = totalHours % 24;
+
+            let timeStr = '';
+            if (days > 0) {
+                timeStr = remainingHours > 0 ? `${days} วัน ${remainingHours} ชั่วโมง` : `${days} วัน`;
+            } else {
+                timeStr = `${Math.max(1, remainingHours)} ชั่วโมง`;
+            }
+
+            // Time color coding:
+            // เกิน 1 วัน (totalHours > 24) -> สีแดง (#dc2626)
+            // เกิน 12 ชั่วโมง -> สีเหลือง (#ca8a04)
+            // เกิน 3 ชั่วโมง -> สีฟ้า (#0284c7)
+            // ต่ำกว่า 3 ชั่วโมง -> สีเขียว (#16a34a)
+            let timeColor = '#16a34a';
+            if (totalHours > 24) {
+                timeColor = '#dc2626';
+            } else if (totalHours > 12) {
+                timeColor = '#ca8a04';
+            } else if (totalHours > 3) {
+                timeColor = '#0284c7';
+            } else {
+                timeColor = '#16a34a';
+            }
+
+            timeEl.innerHTML = `ใช้เวลาอีกประมาณ <span style="color: ${timeColor};" class="font-bold">${timeStr}</span> จะลงมาอยู่ในระดับเฝ้าระวัง`;
+            timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-slate-500";
+            timeEl.style.color = '';
+        } else {
+            timeEl.innerText = `ระดับน้ำอยู่ในเกณฑ์ปกติแล้ว`;
+            timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-green-600";
+            timeEl.style.color = '#16a34a';
+        }
+    } else if (dropRatePerHour <= -0.0005) {
+        const riseRate = Math.abs(dropRatePerHour);
+        const rateFormatted = riseRate >= 0.01 ? riseRate.toFixed(2) : riseRate.toFixed(3);
+        rateEl.innerHTML = `น้ำเพิ่มเฉลี่ยชั่วโมงละ <span style="color: #dc2626;" class="font-bold">${rateFormatted} ม.</span>`;
+        rateEl.className = "text-xl sm:text-2xl font-bold text-slate-800 mt-1";
+        timeEl.innerText = `แนวโน้มระดับน้ำกำลังเพิ่มขึ้น`;
+        timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-red-500";
+        timeEl.style.color = '#ef4444';
+    } else {
+        rateEl.innerText = `ระดับน้ำทรงตัว`;
+        rateEl.className = "text-xl sm:text-2xl font-bold text-slate-800 mt-1";
+        timeEl.innerText = `ไม่มีการเปลี่ยนแปลงในช่วง 24 ชม. ที่ผ่านมา`;
+        timeEl.className = "text-xs sm:text-sm font-medium mt-1 text-slate-400";
+        timeEl.style.color = '#94a3b8';
+    }
+}
+
 function updateUI(level, datetime) {
   const latestTimeEl = document.getElementById('latestTime');
   if (latestTimeEl) latestTimeEl.innerText = datetime;
@@ -471,7 +613,8 @@ function updateUI(level, datetime) {
   }
 
   // Calculate Bank difference
-  const diffBank = BANK_LEVEL - level;
+  const bankValue = BANK_LEVELS[currentStation] || 1.00;
+  const diffBank = bankValue - level;
   const bankTextEl = document.getElementById('bankStatusText');
   if (bankTextEl) {
       if (diffBank > 0) {
@@ -482,6 +625,14 @@ function updateUI(level, datetime) {
         bankTextEl.className = "text-2xl font-bold text-red-600 mt-1";
       }
   }
+
+  const bankDetailEl = document.getElementById('bankDetailText');
+  if (bankDetailEl) {
+      bankDetailEl.innerHTML = `<span style="color: #92400e;" class="font-semibold">ตลิ่งสูง ${bankValue.toFixed(2)} ม.</span>`;
+  }
+
+  // Update Drainage Estimate on the right
+  updateEstimateUI(currentStation, level);
 
   // Tank Fill Height (max 1.00m to align perfectly with CSS gradient percentages)
   const maxDisplay = 1.00;
@@ -530,7 +681,8 @@ function updateUI(level, datetime) {
   const statusBadgeElement = document.getElementById('statusBadge');
   if (statusBadgeElement) {
       statusBadgeElement.innerHTML = badgeHtml;
-      statusBadgeElement.className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClasses}`;
+      statusBadgeElement.className = `self-end px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-sm ${badgeClasses}`;
+      statusBadgeElement.style.alignSelf = 'flex-end';
   }
 
   // Update Car Cards
