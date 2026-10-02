@@ -664,32 +664,19 @@ function updateUI(level, datetime) {
   if (wave1) wave1.style.bottom = `${percent}%`;
   if (wave2) wave2.style.bottom = `${percent}%`;
 
-  // Status Colors & Car logic
+  // Status Colors
   let badgeHtml = 'ปกติ';
   let badgeClasses = 'bg-blue-100 text-blue-700';
   let levelTextBorder = 'border-blue-200 shadow-blue-500/20';
-
-  let sedanStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
-  let suvStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
-  let pickupStatus = { text: 'ผ่านได้สบาย', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
 
   if (level >= CRITICAL_LEVEL) {
     badgeHtml = '🚨 วิกฤต';
     badgeClasses = 'bg-red-100 text-red-700';
     levelTextBorder = 'border-red-400 shadow-red-500/40';
-    
-    sedanStatus = { text: '❌ ห้ามผ่านเด็ดขาด', color: 'bg-red-100 text-red-700', border: 'border-red-200 bg-red-50' };
-    suvStatus = { text: '⚠️ ควรหลีกเลี่ยง', color: 'bg-orange-100 text-orange-700', border: 'border-orange-200 bg-orange-50' };
-    pickupStatus = { text: '✅ ผ่านได้ (ช้าๆ)', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
-    
   } else if (level >= WARNING_LEVEL) {
     badgeHtml = '⚠️ เฝ้าระวัง';
     badgeClasses = 'bg-orange-100 text-orange-700';
     levelTextBorder = 'border-orange-400 shadow-orange-500/40';
-    
-    sedanStatus = { text: '⚠️ ระวังแอ่งลึก', color: 'bg-orange-100 text-orange-700', border: 'border-orange-200 bg-orange-50' };
-    suvStatus = { text: '✅ ผ่านได้', color: 'bg-green-100 text-green-700', border: 'border-green-200 bg-green-50' };
-    
   }
 
   const levelTextBox = document.getElementById('levelTextBox');
@@ -703,21 +690,6 @@ function updateUI(level, datetime) {
       statusBadgeElement.className = `self-end px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-sm ${badgeClasses}`;
       statusBadgeElement.style.alignSelf = 'flex-end';
   }
-
-  // Update Car Cards
-  updateCarCard('Sedan', sedanStatus);
-  updateCarCard('SUV', suvStatus);
-  updateCarCard('Pickup', pickupStatus);
-}
-
-function updateCarCard(type, status) {
-  const card = document.getElementById(`car${type}`);
-  const badge = document.getElementById(`status${type}`);
-  if (!card || !badge) return;
-  
-  card.className = `car-card p-4 rounded-xl border flex flex-col items-center text-center ${status.border}`;
-  badge.innerText = status.text;
-  badge.className = `mt-auto px-3 py-1 rounded-full text-[0.7rem] font-bold w-full ${status.color}`;
 }
 
 function renderChart(labels, data) {

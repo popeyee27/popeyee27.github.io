@@ -75,13 +75,6 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-.car-card {
-  transition: transform 0.2s;
-}
-.car-card:hover {
-  transform: translateY(-2px);
-}
-
 /* Flow map lines */
 .flow-line {
   stroke-dasharray: 12 12;
