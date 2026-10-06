@@ -1,0 +1,7 @@
+node_modules/
+.env
+*.token
+scrape_and_push.sh
+*.sh
+*.py
+hydoreus/v1/

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#202124">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=2">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2">
+  <title>สถานการณ์น้ำและเรดาร์ฝน | Water & Radar Monitor</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="mobile.css?v=28">
+  <style>
+    /* Google Weather-style dark theme for the weather panel */
+    .gw { --gw-bg:#202124; --gw-surface:#292a2d; --gw-surface-2:#303134; --gw-line:#3c4043; --gw-text:#e8eaed; --gw-muted:#9aa0a6; --gw-accent:#8ab4f8; }
+    #weatherSection { background:var(--gw-bg, #202124); border-color:#3c4043; }
+    #weatherSection .panel-header { background:#202124; border-color:#3c4043; }
+    .gw-muted { color:var(--gw-muted); }
+    .gw-tabs { display:flex; gap:4px; border-bottom:1px solid var(--gw-line); }
+    .gw-tab { padding:10px 16px; font-size:0.9rem; font-weight:500; color:var(--gw-muted); border-bottom:3px solid transparent; margin-bottom:-1px; border-radius:8px 8px 0 0; transition:color .15s, background .15s; }
+    .gw-tab:hover { color:var(--gw-text); background:rgba(138,180,248,.08); }
+    .gw-tab.active { color:var(--gw-accent); border-bottom-color:var(--gw-accent); }
+    .gw-pane { display:flex; flex-direction:column; gap:12px; }
+    .gw-pane[hidden] { display:none; }
+    .gw-hero { display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:4px 4px 8px; }
+    .gw-hero-icon { font-size:3.6rem; line-height:1; }
+    .gw-hero-temp { font-size:4rem; font-weight:400; line-height:1; color:var(--gw-text); letter-spacing:-2px; }
+    .gw-hero-side { display:flex; flex-direction:column; gap:4px; align-items:flex-start; min-width:0; }
+    .gw-hero-cond { font-size:1.15rem; font-weight:500; color:var(--gw-text); }
+    .gw-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--gw-line); border:1px solid var(--gw-line); border-radius:16px; overflow:hidden; }
+    @media (min-width:640px) { .gw-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+    .gw-tile { background:var(--gw-surface); padding:12px 14px; min-width:0; }
+    .gw-tile-label { display:flex; gap:6px; align-items:center; font-size:0.75rem; color:var(--gw-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gw-tile-value { margin-top:4px; font-size:1.15rem; font-weight:500; color:var(--gw-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gw-card { background:var(--gw-surface); border:1px solid var(--gw-line); border-radius:16px; padding:14px; }
+    .gw-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+    .gw-card-title { font-size:0.95rem; font-weight:500; color:var(--gw-text); }
+    .gw-scroll-btns { display:flex; gap:4px; }
+    .gw-scroll-btns button { width:30px; height:30px; border-radius:9999px; background:var(--gw-surface-2); color:var(--gw-muted); border:1px solid var(--gw-line); font-size:0.7rem; }
+    .gw-scroll-btns button:hover { color:var(--gw-text); background:#3c4043; }
+    .gw .hourly-card { background:var(--gw-surface); border-color:var(--gw-line); border-radius:16px; }
+    .src-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:9999px; border:1px solid; white-space:normal; max-width:100%; overflow-wrap:anywhere; line-height:1.35; }
+    .src-owm { color:#fdba74; background:rgba(67,20,7,.6); border-color:rgba(194,65,12,.6); }
+    .src-tmd { color:#38bdf8; background:rgba(8,47,73,.8); border-color:rgba(7,89,133,.8); }
+    .src-google { color:#86efac; background:rgba(5,46,22,.7); border-color:rgba(21,128,61,.7); }
+    #hourlySource { white-space:normal; text-align:right; }
+    .src-badge.stale { color:#fcd34d; background:rgba(69,26,3,.8); border-color:rgba(180,83,9,.8); }
+  </style>
+</head>
+<body class="text-slate-100 antialiased bg-[#0b0f19]">
+
+  <header class="dash-topbar">
+    <div class="dash-container flex flex-wrap items-center justify-between gap-3 py-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <img src="favicon-192x192.png" alt="โลโก้สถานการณ์น้ำ ร่มเกล้า24" class="w-10 h-10 rounded-xl object-contain shadow-md shrink-0" width="40" height="40">
+        <div class="min-w-0">
+          <h1 class="text-base sm:text-lg font-bold text-white leading-tight truncate">สถานการณ์น้ำและเรดาร์ฝน</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-300 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5" title="ระบบดึงข้อมูลอัปเดตทุก 10 นาที เพื่อป้องกันข้อมูลบวมและการจำกัดการเชื่อมต่อ (API Rate Limit)">
+        <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>อัปเดตล่าสุด: <span id="latestTime" class="text-white">--:--</span></span>
+        <span id="timeAgoBadge" class="hidden px-2 py-0.5 rounded text-[0.7rem] font-bold"></span>
+      </div>
+    </div>
+    <!-- Quick section nav (shown on phones only, see mobile.css) -->
+    <nav class="quick-nav" aria-label="ไปยังส่วนต่างๆ">
+      <a href="#weatherSection">🌤️ อากาศ</a>
+      <a href="#riskSection">🛡️ ความเสี่ยง</a>
+      <a href="#stationsSection">🌊 ระดับน้ำ</a>
+      <a href="#radarSection">📡 เรดาร์</a>
+      <a href="#historySection">📉 กราฟย้อนหลัง</a>
+    </nav>
+  </header>
+
+  <main class="dash-container py-4 sm:py-6">
+
+    <div id="topWarningBanner" class="hidden"></div>
+
+    <div class="dash-grid">
+
+      <!-- ===== Row 1: weather + radar ===== -->
+      <div class="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+
+        <section class="panel h-full flex flex-col" id="weatherSection">
+          <div class="panel-header flex-wrap sm:flex-nowrap justify-between gap-2 py-3 px-4">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="panel-title font-bold text-white text-base sm:text-lg truncate">🌤️ พยากรณ์อากาศและปริมาณฝนล่วงหน้า</span>
+              <span class="inline-flex items-center gap-1 text-xs font-bold text-sky-400 bg-sky-950/80 border border-sky-800/80 px-2.5 py-0.5 rounded-full shrink-0">
+                OpenWeather + TMD NWP
+              </span>
+            </div>
+            <div class="text-xs text-slate-400 shrink-0 font-medium">
+              หลายแหล่งข้อมูล
+            </div>
+          </div>
+          <div class="panel-body flex-1 flex flex-col gap-4 p-4 gw">
+
+            <!-- Official TMD warnings (shown only while in effect) -->
+            <div id="tmdAlerts" class="flex flex-col gap-2" hidden></div>
+
+            <div class="gw-tabs" role="tablist">
+              <button type="button" class="gw-tab active" data-tab="now" role="tab">ปัจจุบัน</button>
+              <button type="button" class="gw-tab" data-tab="hourly" role="tab">รายชั่วโมง</button>
+              <button type="button" class="gw-tab" data-tab="daily" role="tab">7 วัน</button>
+            </div>
+
+            <!-- Tab: now (current section: OpenWeather > Google > TMD, corrected by rain gauges) -->
+            <div class="gw-pane" data-pane="now">
+              <div class="gw-hero">
+                <div id="weatherCondIcon" class="gw-hero-icon"></div>
+                <div class="gw-hero-temp" id="weatherTempText">--°</div>
+                <div class="gw-hero-side">
+                  <div id="weatherCondText" class="gw-hero-cond">--</div>
+                  <div class="gw-muted">รู้สึกเหมือน <span id="weatherFeelsText">--</span></div>
+                  <span class="src-badge src-owm" id="currentSource">OpenWeather</span>
+                  <div class="text-xs" style="color:#fdd663" data-stale-for="current" hidden>⚠️ ข้อมูลอาจไม่เป็นปัจจุบัน</div>
+                </div>
+              </div>
+              <div class="gw-grid">
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/humidity.svg" alt="">ความชื้น</div><div id="weatherRhText" class="gw-tile-value">--</div><div id="weatherRhHint" class="gw-tile-hint"></div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/wind.svg" alt="">ลม</div><div id="weatherWindText" class="gw-tile-value">--</div><div id="weatherWindHint" class="gw-tile-hint"></div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/raindrop.svg" alt="">ฝน 1 ชม.ที่ผ่านมา</div><div id="weatherRain1hText" class="gw-tile-value">--</div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/umbrella.svg" alt="">โอกาสฝน (ชม.นี้ → ถัดไป)</div><div id="weatherPopText" class="gw-tile-value">--</div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/cloudy.svg" alt="">เมฆปกคลุม</div><div id="weatherCloudsText" class="gw-tile-value">--</div><div id="weatherCloudsHint" class="gw-tile-hint"></div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/barometer.svg" alt="">ความกดอากาศ</div><div id="weatherPressureText" class="gw-tile-value">--</div><div id="weatherPressureHint" class="gw-tile-hint"></div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/thunderstorms.svg" alt="">พายุฝนฟ้าคะนอง</div><div id="weatherThunderText" class="gw-tile-value">--</div><div id="weatherThunderHint" class="gw-tile-hint"></div></div>
+                <div class="gw-tile"><div class="gw-tile-label"><img class="wx-tile-icon" src="icons/uv-index.svg" alt="">ดัชนี UV</div><div id="weatherUviText" class="gw-tile-value">--</div><div id="weatherUviHint" class="gw-tile-hint"></div></div>
+              </div>
+
+              <!-- Short-term rain (short_rain section) -->
+              <div class="gw-card">
+                <div class="gw-card-head">
+                  <span class="gw-card-title">ฝนระยะสั้น · 2 ชม.ข้างหน้า</span>
+                  <span class="src-badge src-owm" id="minutelySource">OpenWeather</span>
+                </div>
+                <div id="minutelySummary" hidden></div>
+                <div id="shortRainHeadline" class="short-rain-headline"></div>
+                <div id="shortRainStrip" class="strip no-scrollbar"></div>
+                <div class="text-xs" style="color:#fdd663" data-stale-for="short_rain" hidden>⚠️ ข้อมูลฝนระยะสั้นอาจไม่เป็นปัจจุบัน</div>
+                <div class="strip-legend rain-legend">ความแรงของฝนทุก 15 นาที (ช่องจางด้านซ้ายของ "ตอนนี้" = ฝนที่วัดได้จริงจากสถานี กทม. ช่วงที่ผ่านมา) ·
+                  <span><i style="background:#8ab4f8"></i>เล็กน้อย</span>
+                  <span><i style="background:#fdd663"></i>ปานกลาง</span>
+                  <span><i style="background:#fb923c"></i>หนัก</span>
+                  <span><i style="background:#f28b82"></i>หนักมาก</span></div>
+              </div>
+            </div>
+
+            <!-- Tab: hourly (weighted multi-source verdict) -->
+            <div class="gw-pane" data-pane="hourly" hidden>
+              <div class="gw-card-head" style="justify-content:flex-end">
+                <div class="gw-scroll-btns"><button type="button" onclick="scrollSection('hourlyForecastContainer', -260)" title="เลื่อนซ้าย">◀</button><button type="button" onclick="scrollSection('hourlyForecastContainer', 260)" title="เลื่อนขวา">▶</button></div>
+              </div>
+              <div id="hourlyForecastContainer" class="strip no-scrollbar">
+                <div class="text-xs text-slate-500 py-3">กำลังโหลดข้อมูลรายชั่วโมง...</div>
+              </div>
+              <div id="hourlyDetail" class="strip-detail"></div>
+              <div><span class="src-badge src-tmd" id="hourlySource">TMD NWP (กรมอุตุฯ)</span></div>
+              <div class="text-xs" style="color:#fdd663" data-stale-for="hourly" hidden>⚠️ ข้อมูลรายชั่วโมงอาจไม่เป็นปัจจุบัน</div>
+            </div>
+
+            <!-- Tab: daily (TMD NWP 7 days) -->
+            <div class="gw-pane" data-pane="daily" hidden>
+              <div class="gw-card-head" style="justify-content:flex-end">
+                <div class="gw-scroll-btns"><button type="button" onclick="scrollSection('dailyForecastContainer', -260)" title="เลื่อนซ้าย">◀</button><button type="button" onclick="scrollSection('dailyForecastContainer', 260)" title="เลื่อนขวา">▶</button></div>
+              </div>
+              <div id="dailyForecastContainer" class="strip no-scrollbar">
+                <div class="text-xs text-slate-500 py-3">กำลังโหลดข้อมูลรายวัน...</div>
+              </div>
+              <div class="strip-legend">เส้นเหลือง = อุณหภูมิสูงสุด · เส้นฟ้า = ต่ำสุด · แท่ง/คำใต้แท่ง = ปริมาณฝนทั้งวัน (ตัวเลขดูได้เมื่อแตะคอลัมน์) · แตะคอลัมน์เพื่อดูรายละเอียด</div>
+              <div id="dailyDetail" class="strip-detail"></div>
+              <div><span class="src-badge src-tmd" id="dailySource">TMD NWP (กรมอุตุฯ)</span></div>
+            </div>
+
+          </div>
+        </section>
+
+        <section class="panel h-full flex flex-col" id="radarSection">
+          <div class="panel-header flex-wrap sm:flex-nowrap gap-2 py-3 px-4">
+            <div class="flex items-center gap-2 min-w-0">
+              <span id="radarTitle" class="panel-title truncate font-bold text-white text-base sm:text-lg">📡 เรดาร์ฝน หนองจอก (กทม.)</span>
+              <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-0.5 rounded-full shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ภาพเคลื่อนไหว (Loop)
+              </span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 ml-auto">
+              <span id="radarCountdownText" class="text-xs text-slate-400"></span>
+              <span id="radarUpdatedText" class="text-xs text-slate-300 font-semibold"></span>
+              <button id="btnRadarRefresh" onclick="refreshRadar(true)" class="flex items-center gap-1 text-xs font-semibold text-blue-400 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 transition-colors" title="โหลดภาพเรดาร์ล่าสุดทันที">
+                <span id="radarRefreshIcon" class="inline-block">↻</span> รีเฟรช
+              </button>
+            </div>
+          </div>
+          <div class="panel-body flex-1 flex flex-col justify-between gap-3 p-4">
+            <a href="https://weather.bangkok.go.th/Radar/RadarAnimation.aspx" target="_blank" rel="noopener" class="radar-frame flex-1 w-full min-h-[380px] flex items-center justify-center" title="เปิดภาพเรดาร์ความละเอียดสูง (สำนักการระบายน้ำ กทม.)">
+              <img id="radarImage" src="https://weather.tmd.go.th/pic_bmancLoop.gif" alt="ภาพเรดาร์ฝนเคลื่อนไหว สถานีหนองจอก กรุงเทพฯ ล่าสุด" width="965" height="800" loading="lazy" decoding="async">
+              <div id="radarError" class="hidden absolute inset-0 flex items-center justify-center text-sm text-slate-400 bg-slate-900">ไม่สามารถโหลดภาพเรดาร์ได้ ลองกดรีเฟรช</div>
+            </a>
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-1">
+              <span>ภาพเรดาร์เคลื่อนไหว · รัศมี 60/120 กม. · รีเฟรชอัตโนมัติทุก 5 นาที</span>
+              <span>
+                <a href="https://weather.bangkok.go.th/Radar/RadarAnimation.aspx" target="_blank" rel="noopener" class="text-blue-400 hover:underline">ต้นทาง กทม.</a> ·
+                <a href="https://weather.tmd.go.th/bma_ncLoop.php" target="_blank" rel="noopener" class="text-blue-400 hover:underline">TMD Radar Loop</a>
+              </span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ===== Flood risk analysis (separate panel, right after the weather) ===== -->
+      <section class="panel col-span-12" id="riskSection">
+        <div class="panel-header flex-wrap justify-between gap-2 py-3 px-4">
+          <span class="panel-title font-bold text-white text-base sm:text-lg">🛡️ วิเคราะห์ความเสี่ยงน้ำท่วม</span>
+          <span class="src-badge src-tmd" id="alertSource">ระดับน้ำ + สถานีวัดฝน กทม. + พยากรณ์ฝนหลายแหล่ง</span>
+        </div>
+        <div class="panel-body p-4 flex flex-col gap-3">
+          <div class="text-xs" style="color:#fdd663" data-stale-for="risk" hidden>⚠️ ผลวิเคราะห์อาจไม่เป็นปัจจุบัน</div>
+          <div id="weatherAlertBox" class="text-sm">
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/80 text-xs text-slate-400">
+              กำลังวิเคราะห์ข้อมูลระดับน้ำและสภาพอากาศ...
+            </div>
+          </div>
+          <div class="risk-disclaimer">
+            ⚠️ ผลวิเคราะห์นี้คำนวณอัตโนมัติจากพยากรณ์อากาศและข้อมูลตรวจวัด <b>การคาดการณ์อาจเกิดความผิดพลาดได้</b>
+            โปรดใช้ประกอบการตัดสินใจร่วมกับประกาศทางการของกรมอุตุนิยมวิทยาและกรุงเทพมหานคร
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Water level stations (carousel on phones) ===== -->
+      <section class="col-span-12" id="stationsSection">
+        <div class="stations-head">
+          <div class="min-w-0">
+            <span class="panel-title font-bold text-white text-base sm:text-lg">🌊 ระดับน้ำในคลอง</span>
+            <div class="text-xs gw-muted">เกณฑ์เตือนภัย/วิกฤติของแต่ละสถานีตามสำนักการระบายน้ำ กทม.</div>
+            <div class="text-xs" style="color:#fdd663" data-stale-for="stations" hidden>⚠️ ข้อมูลระดับน้ำอาจไม่เป็นปัจจุบัน</div>
+          </div>
+          <div id="stationDots" class="station-dots" aria-hidden="true"></div>
+        </div>
+        <div id="dynamicStationsContainer" class="stations-grid">
+          <!-- Injected by script.js -->
+        </div>
+      </section>
+      
+      <!-- ===== Water level history (primary station) ===== -->
+      <section class="panel col-span-12" id="historySection">
+        <div class="panel-header flex-wrap sm:flex-nowrap justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="panel-title font-bold text-slate-200">📉 ระดับน้ำย้อนหลัง</span>
+          </div>
+          <div id="histRange" class="hist-range"></div>
+        </div>
+        <div class="panel-body flex flex-col gap-3">
+          <div id="histLegend" class="hist-legend"></div>
+          <div class="hist-canvas-wrap">
+            <canvas id="historyChart"></canvas>
+          </div>
+          <div id="histCaption" class="text-xs gw-muted"></div>
+          <div class="text-xs" style="color:#fdd663" data-stale-for="history" hidden>⚠️ ข้อมูลกราฟอาจไม่เป็นปัจจุบัน</div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="site-footer">
+      <p>ระดับน้ำและฝนจากสถานีอัปเดตทุก ~6 นาที · พยากรณ์อากาศอัปเดตทุก 6–30 นาทีตามแหล่ง</p>
+      <ul>
+        <li><b>ระดับน้ำ / เกณฑ์เตือนภัย-วิกฤติ / ฝนจากสถานีวัดฝน:</b> <a href="https://weather.bangkok.go.th/" target="_blank" rel="noopener">สำนักการระบายน้ำ กรุงเทพมหานคร</a></li>
+        <li><b>อากาศปัจจุบัน / ฝนรายนาที / โอกาสฝนรายชั่วโมง:</b> <a href="https://openweathermap.org/" target="_blank" rel="noopener">OpenWeather</a> (One Call API 4.0)</li>
+        <li><b>พยากรณ์รายชั่วโมง / ฝนราย 15 นาที / โอกาสพายุฝนฟ้าคะนอง / อากาศปัจจุบัน (สำรอง):</b> <a href="https://developers.google.com/maps/documentation/weather" target="_blank" rel="noopener">Google Maps Weather API</a></li>
+        <li><b>พยากรณ์รายชั่วโมง / ราย 15 นาที (ECMWF, GFS, ICON, JMA):</b> <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0)</li>
+        <li><b>พยากรณ์รายชั่วโมง / 7 วัน (แบบจำลอง NWP):</b> <a href="https://data.tmd.go.th/" target="_blank" rel="noopener">กรมอุตุนิยมวิทยา</a></li>
+        <li><b>ประกาศเตือนภัย:</b> <a href="https://www.tmd.go.th/" target="_blank" rel="noopener">กรมอุตุนิยมวิทยา</a> (data.tmd.go.th)</li>
+        <li><b>ไอคอนสภาพอากาศ:</b> <a href="https://github.com/basmilius/weather-icons" target="_blank" rel="noopener">Meteocons</a> โดย Bas Milius (MIT)</li>
+        <li><b>ภาพเรดาร์:</b> สถานีเรดาร์หนองจอก กทม. ผ่านกรมอุตุนิยมวิทยา</li>
+      </ul>
+      <p>การพยากรณ์และผลวิเคราะห์อาจคลาดเคลื่อน โปรดติดตามประกาศทางการประกอบ</p>
+    </footer>
+
+  </main>
+
+  <script src="script.js?v=119"></script>
+</body>
+</html>

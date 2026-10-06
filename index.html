@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BcYU@Home:~</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            
+            /* Oh My Posh Theme Colors (Agnoster/Powerline inspired) */
+            --segment1-bg: #5D3FD3;
+            --segment1-fg: #ffffff;
+            --segment2-bg: #FFBF00;
+            --segment2-fg: #000000;
+            --segment3-bg: #4caf50;
+            --segment3-fg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .terminal-box {
+            width: 100%;
+            max-width: 700px;
+            background-color: #252526;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .terminal-header {
+            background-color: #333333;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .close { background-color: #ff5f56; }
+        .minimize { background-color: #ffbd2e; }
+        .maximize { background-color: #27c93f; }
+
+        .terminal-body {
+            padding: 20px;
+            min-height: 250px;
+        }
+
+        .line {
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Oh My Posh Prompt */
+        .prompt-container {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .seg {
+            padding: 2px 10px;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            height: 24px;
+        }
+
+        .seg1 {
+            background-color: var(--segment1-bg);
+            color: var(--segment1-fg);
+            border-radius: 3px 0 0 3px;
+        }
+
+        .seg2 {
+            background-color: var(--segment2-bg);
+            color: var(--segment2-fg);
+        }
+
+        /* Powerline Arrows using CSS Triangles */
+        .arrow1 {
+            width: 0; 
+            height: 0; 
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 10px solid var(--segment1-bg);
+            z-index: 2;
+        }
+
+        .arrow2 {
+            width: 0; 
+            height: 0; 
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 10px solid var(--segment2-bg);
+            z-index: 1;
+        }
+
+        .command {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .output {
+            margin-bottom: 20px;
+            padding-left: 4px;
+        }
+
+        a {
+            color: #4daafc;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .file-exec { color: #4caf50; font-weight: bold; }
+        .file-dir { color: #569cd6; font-weight: bold; }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background-color: #d4d4d4;
+            vertical-align: middle;
+            margin-left: 5px;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"></head>
+<body>
+
+    <div class="terminal-box">
+        <div class="terminal-header">
+            <div class="mac-btn close"></div>
+            <div class="mac-btn minimize"></div>
+            <div class="mac-btn maximize"></div>
+        </div>
+        
+        <div class="terminal-body">
+            
+                                    <div class="line">
+                <div class="prompt-container">
+                    <div class="seg seg1">bcyu@127.0.0.1</div>
+                    <div class="arrow1"></div>
+                    <div class="seg seg2">~</div>
+                    <div class="arrow2"></div>
+                </div>
+                <span class="command">tree</span>
+            </div>
+            
+                                                <div class="output" style="white-space: pre; line-height: 1.5;">├── <span style="color: #ffffff; font-weight: bold;">project/</span>
+│   └── <a href="/hydoreus/" class="file-dir" style="color: #4daafc;"><i class="fa-solid fa-cloud-showers-water"></i> hydoreus/</a>  <span style="color: #6a9955;"># Rain &amp; Flood forecast</span>
+└── <span style="color: #ffffff; font-weight: bold;">contact/</span>
+    ├── <a href="https://x.com/__b_cyu" target="_blank" style="color: #d4d4d4;"><i class="fa-brands fa-x-twitter"></i> twitter</a>
+    ├── <a href="https://www.tiktok.com/@__b_cyu" target="_blank" style="color: #d4d4d4;"><i class="fa-brands fa-tiktok"></i> tiktok</a>
+    └── <a href="https://www.instagram.com/__b_cyu/" target="_blank" style="color: #d4d4d4;"><i class="fa-brands fa-instagram"></i> instagram</a></div>
+
+            <div class="line" style="margin-bottom: 0;">
+                <div class="prompt-container">
+                    <div class="seg seg1">bcyu@127.0.0.1</div>
+                    <div class="arrow1"></div>
+                    <div class="seg seg2">~</div>
+                    <div class="arrow2"></div>
+                </div>
+                <span class="cursor"></span>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

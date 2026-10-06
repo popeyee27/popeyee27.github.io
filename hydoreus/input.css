@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+body {
+  font-family: 'Kanit', sans-serif;
+  background-color: #0b0f19;
+  color: #f1f5f9;
+}
+
+/* ===== iOS-Weather Style Liquid Wave Widget ===== */
+.water-widget {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #060a12;
+  border: 1px solid #1e293b;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+@keyframes waveMoveFront {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes waveMoveBack {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.wave-front {
+  animation: waveMoveFront 6s linear infinite;
+  will-change: transform;
+}
+
+.wave-back {
+  animation: waveMoveBack 9s linear infinite;
+  will-change: transform;
+}
+
+/* ===== Dashboard (Grafana-like full fluid width) ===== */
+.dash-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px) {
+  .dash-container { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .dash-container { padding-left: 2rem; padding-right: 2rem; }
+}
+@media (min-width: 1536px) {
+  .dash-container { padding-left: 2.5rem; padding-right: 2.5rem; }
+}
+
+.dash-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #1e293b;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start; /* Prevents stretching to equal height, wraps content naturally */
+}
+
+.panel {
+  background: #151c2c;
+  border: 1px solid #243048;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  height: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1e293b;
+  min-height: 3rem;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-body {
+  padding: 1rem;
+  flex: 1 1 auto;
+}
+
+/* Station stat panels */
+.station-card {
+  --accent: #94a3b8;
+  position: relative;
+  transition: all .2s ease;
+  border: 1px solid #243048;
+  background: #151c2c;
+}
+.station-card:hover {
+  transform: translateY(-2px);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.station-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0 0.45rem;
+  height: 1.35rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent, #94a3b8);
+}
+
+/* Rain radar image */
+.radar-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 380px;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: #0b0f19;
+  border: 1px solid #243048;
+}
+.radar-frame img {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  transition: opacity .3s;
+}
+.radar-frame:hover img { opacity: 0.92; }
+
+/* Trend Stepper buttons */
+.trend-btn {
+  cursor: pointer;
+  user-select: none;
+}
+
+.items-end { align-items: flex-end; }
+.self-end { align-self: flex-end; }
+.text-right { text-align: right; }
+.ml-auto { margin-left: auto; }
+
+/* ===== Weather Forecast Styling ===== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hourly-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.6rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hourly-card {
+  flex: 0 0 auto;
+  width: 102px;
+  border-radius: 0.85rem;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+
+
