@@ -1048,10 +1048,10 @@ function renderRiskSection(sec) {
     const d = sec.data, b = d.banner, w = d.water, g = d.gauges;
     // One card per gauge: name, distance and a status badge, then its 15-minute rain bars (shared scale)
     const rows = g.rows.map(r => `
-                        <div class="gauge-card${r.fresh ? '' : ' gauge-old'}">
+                        <div class="gauge-card${r.fresh ? '' : ' gauge-old'}${r.status.code === 'raining' ? ' gauge-wet' : ''}">
                             <div class="gauge-head">
                                 <a href="https://weather.bangkok.go.th/rain/StationDetail?id=${encodeURIComponent(r.id)}&lang=th" target="_blank" rel="noopener" class="gauge-name" title="ดูข้อมูลสด สถานี ${esc(r.id)} กทม.">${esc(r.name)} ↗</a>
-                                <span class="gauge-status" style="color:${r.status.color};border-color:${r.status.color}55"><img src="icons/${esc(r.status.icon)}.svg" alt="">${esc(r.status.text)}</span>
+                                <span class="gauge-status gauge-status-${esc(r.status.code)}" style="color:${r.status.color};border-color:${r.status.color}55"><img src="icons/${esc(r.status.icon)}.svg" alt="">${esc(r.status.text)}</span>
                             </div>
                             <div class="gauge-sub">${esc([r.district, r.where].filter(Boolean).join(' · '))}${r.fresh ? '' : ` · วัดเมื่อ ${esc(r.time_th || '-')} (ไม่นับในความเสี่ยง)`}</div>
                             <div class="gauge-sub">ฝนสะสม 24 ชม. <b style="color:${esc(r.rain24_color)}">${esc(r.rain24_text)}</b> ${g.unit}</div>

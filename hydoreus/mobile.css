@@ -271,6 +271,10 @@ html { scroll-padding-top: 120px; }
 .gauge-name:hover { text-decoration: underline; }
 .gauge-status { flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; font-size: .72rem; font-weight: 600; padding: 0 8px 0 2px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
 .gauge-status img { width: 22px; height: 22px; }
+/* Raining: a filled badge and a blue card edge, so wet gauges stand out from dry ones at a glance */
+.gauge-card.gauge-wet { border-color: rgba(138, 180, 248, .55); background: linear-gradient(180deg, rgba(37, 99, 235, .16), rgba(2, 6, 23, .6)); box-shadow: inset 3px 0 0 #8ab4f8; }
+.gauge-status.gauge-status-raining { background: #8ab4f8; color: #0b1220 !important; font-weight: 800; }
+.gauge-status.gauge-status-dry { opacity: .75; }
 .gauge-sub { font-size: .72rem; color: #94a3b8; margin-top: 2px; line-height: 1.4; }
 .gauge-sub b { font-size: .8rem; font-variant-numeric: tabular-nums; }
 .gauge-spark { position: relative; margin-top: 8px; }
