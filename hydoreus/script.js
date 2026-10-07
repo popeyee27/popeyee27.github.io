@@ -73,29 +73,33 @@ async function doLoadSections() {
         // The server rebuilds every ~6 min; a manifest older than 15 min means the server loop has stopped:
         // flag every section, since none of them is being refreshed
         const serverDown = Date.now() - Date.parse(manifest.generated_at) > MANIFEST_MAX_AGE_MS;
-        for (const name of Object.keys(SECTION_RENDERERS)) {
+        // All changed sections download in parallel; each renders as soon as it arrives, and one failed
+        // download does not stop the others
+        await Promise.all(Object.keys(SECTION_RENDERERS).map(async name => {
             const info = (manifest.sections || {})[name];
-            if (!info || !info.content_changed_at) continue;
+            if (!info || !info.content_changed_at) return;
             // Server-side failure or no fresh data: keep showing the last good content, flagged as possibly old
             const flag = sec => serverDown || info.ok === false || !!(sec && sec.stale);
             setSectionStale(name, flag(sectionData[name]));
-            // Only download (and re-render) a section when its content changed since we last loaded it
-            if (sectionChangedAt[name] === info.content_changed_at) continue;
-            // Each section on its own: one failed download must not stop the others
+            // Only download (and re-render) a section when it may be newer than what we show
+            const have = sectionChangedAt[name];
+            if (have && Date.parse(have) >= Date.parse(info.content_changed_at)) return;
             try {
                 const sec = await fetchJson(`${SECTION_BASE_URL}/${name}.json?v=${encodeURIComponent(info.content_changed_at)}`);
-                if (sec.schema_version !== SECTION_SCHEMA) { showRefreshNotice(); continue; }
-                // Accept only the version the manifest announced (an upload still in progress gives the old file)
-                if (sec.generated_at !== info.content_changed_at) { nextMs = 60 * 1000; continue; }
+                if (sec.schema_version !== SECTION_SCHEMA) { showRefreshNotice(); return; }
+                // The CDN can hand out a manifest up to a minute old while the section file is already newer:
+                // the server uploads sections before the manifest, so a newer file is complete -> use it.
+                // Only an older file than announced is refused (retried in a minute).
+                if (Date.parse(sec.generated_at) < Date.parse(info.content_changed_at)) { nextMs = 60 * 1000; return; }
                 sectionData[name] = sec;
-                sectionChangedAt[name] = info.content_changed_at;
+                sectionChangedAt[name] = sec.generated_at;
                 setSectionStale(name, flag(sec));
                 SECTION_RENDERERS[name](sec);
             } catch (err) {
                 console.warn(`Section ${name} load error:`, err);
                 nextMs = 60 * 1000;
             }
-        }
+        }));
         // The server rebuilds every ~6 min: poll 45 s after the next expected build. Clamped so a wrong
         // device clock can neither stall updates nor make us poll every minute forever.
         if (nextMs !== 60 * 1000) {
