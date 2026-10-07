@@ -132,8 +132,15 @@ body { background: var(--g-bg) !important; color: var(--g-text); }
 .site-footer a { color: var(--g-accent); }
 @media (max-width: 639.98px) { .site-footer { font-size: 0.85rem; padding: 12px 4px; } }
 
-/* ----- Quick section nav (mobile only) ----- */
-.quick-nav { display: none; }
+/* ----- Quick section nav (all screens; bigger tap targets on phones below) ----- */
+.quick-nav { display: flex; gap: 8px; overflow-x: auto; padding-top: 2px; padding-bottom: 10px; scrollbar-width: none; }
+.quick-nav::-webkit-scrollbar { display: none; }
+.quick-nav a {
+  flex: 0 0 auto; padding: 5px 14px; display: inline-flex; align-items: center; border-radius: 9999px;
+  background: var(--g-surface-2); border: 1px solid var(--g-line); color: var(--g-text);
+  font-size: 0.85rem; font-weight: 500; white-space: nowrap; transition: background .15s;
+}
+.quick-nav a:hover { background: #3c4043; }
 html { scroll-padding-top: 120px; }
 
 /* =====================================================================
@@ -255,7 +262,7 @@ html { scroll-padding-top: 120px; }
 @media (max-width: 639.98px) { .lvl-num { font-size: 2.4rem; } .lvl-legend { font-size: 0.82rem; } }
 .lvl-stale { font-size: 0.72rem; font-weight: 600; color: #fdd663; background: rgba(69,26,3,.6); border: 1px solid rgba(180,83,9,.7); border-radius: 9999px; padding: 1px 8px; white-space: nowrap; }
 
-/* ===== Flood-risk box: rain gauge cards with a 15-minute rain line ===== */
+/* ===== Flood-risk box: rain gauge cards with 15-minute rain bars ===== */
 .gauge-list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .gauge-card { padding: 8px 10px; border-radius: 10px; background: rgba(2, 6, 23, .6); border: 1px solid rgba(30, 41, 59, .7); }
 .gauge-card.gauge-old { opacity: .6; }
@@ -267,10 +274,10 @@ html { scroll-padding-top: 120px; }
 .gauge-sub { font-size: .72rem; color: #94a3b8; margin-top: 2px; line-height: 1.4; }
 .gauge-sub b { font-size: .8rem; font-variant-numeric: tabular-nums; }
 .gauge-spark { position: relative; margin-top: 8px; }
-.gauge-spark svg { display: block; width: 100%; overflow: visible; }
-.gauge-spark .spark-base { stroke: rgba(100, 116, 139, .45); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.gauge-spark .spark-line { fill: none; stroke: #8ab4f8; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.gauge-spark .spark-area { fill: rgba(138, 180, 248, .14); stroke: none; }
+.spark-bars { display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid rgba(100, 116, 139, .45); }
+.spark-bar-slot { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; }
+.spark-bar { width: 100%; border-radius: 2px 2px 0 0; }
+.spark-nodata { width: 100%; height: 2px; background: repeating-linear-gradient(90deg, #475569 0 3px, transparent 3px 6px); }
 .spark-tick { position: absolute; bottom: 0; font-size: .62rem; color: #94a3b8; white-space: nowrap; }
 .spark-tick.mid { transform: translateX(-50%); }
 .spark-tick.last { transform: translateX(-100%); }

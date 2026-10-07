@@ -8,12 +8,12 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=2">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2">
-  <title>สถานการณ์น้ำและเรดาร์ฝน | Water & Radar Monitor</title>
+  <title>ฝนและระดับน้ำใกล้บ้าน | Hydoreus</title>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   
   <link rel="stylesheet" href="style.css?v=22">
-  <link rel="stylesheet" href="mobile.css?v=28">
+  <link rel="stylesheet" href="mobile.css?v=30">
   <style>
     /* Google Weather-style dark theme for the weather panel */
     .gw { --gw-bg:#202124; --gw-surface:#292a2d; --gw-surface-2:#303134; --gw-line:#3c4043; --gw-text:#e8eaed; --gw-muted:#9aa0a6; --gw-accent:#8ab4f8; }
@@ -58,7 +58,7 @@
       <div class="flex items-center gap-3 min-w-0">
         <img src="favicon-192x192.png" alt="โลโก้สถานการณ์น้ำ ร่มเกล้า24" class="w-10 h-10 rounded-xl object-contain shadow-md shrink-0" width="40" height="40">
         <div class="min-w-0">
-          <h1 class="text-base sm:text-lg font-bold text-white leading-tight truncate">สถานการณ์น้ำและเรดาร์ฝน</h1>
+          <h1 class="text-base sm:text-lg font-bold text-white leading-tight truncate">ฝนและระดับน้ำใกล้บ้าน</h1>
         </div>
       </div>
       <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-300 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5" title="ระบบดึงข้อมูลอัปเดตทุก 10 นาที เพื่อป้องกันข้อมูลบวมและการจำกัดการเชื่อมต่อ (API Rate Limit)">
@@ -69,8 +69,8 @@
         <span id="timeAgoBadge" class="hidden px-2 py-0.5 rounded text-[0.7rem] font-bold"></span>
       </div>
     </div>
-    <!-- Quick section nav (shown on phones only, see mobile.css) -->
-    <nav class="quick-nav" aria-label="ไปยังส่วนต่างๆ">
+    <!-- Quick section nav -->
+    <nav class="quick-nav dash-container" aria-label="ไปยังส่วนต่างๆ">
       <a href="#weatherSection">🌤️ อากาศ</a>
       <a href="#riskSection">🛡️ ความเสี่ยง</a>
       <a href="#stationsSection">🌊 ระดับน้ำ</a>
@@ -286,6 +286,6 @@
 
   </main>
 
-  <script src="script.js?v=119"></script>
+  <script src="script.js?v=121"></script>
 </body>
 </html>

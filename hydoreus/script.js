@@ -130,7 +130,7 @@ function esc(v) {
 function applyAreaHeader(info) {
     if (!info) return;
     const setText = (el, v) => { if (el && v) el.innerText = v; };
-    if (info.title) document.title = info.title + ' | Water & Radar Monitor';
+    if (info.title) document.title = info.title + ' | Hydoreus';
     setText(document.querySelector('h1'), info.title);
     const subDesc = document.querySelector('header .dash-container p');
     if (subDesc) subDesc.remove();
@@ -1020,52 +1020,21 @@ function renderDailyForecast() {
 }
 
 
-// Monotone cubic path through points [[x, y], ...] (Fritsch–Carlson): smooth, but never swings above or
-// below the data (a rain line must not dip under zero between two dry bins)
-function smoothPath(pts) {
-    if (pts.length < 2) return pts.length ? `M${pts[0][0]} ${pts[0][1]}` : '';
-    const n = pts.length, dx = [], m = [], t = [];
-    for (let i = 0; i < n - 1; i++) { dx[i] = pts[i + 1][0] - pts[i][0]; m[i] = (pts[i + 1][1] - pts[i][1]) / dx[i]; }
-    t[0] = m[0]; t[n - 1] = m[n - 2];
-    for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
-    for (let i = 0; i < n - 1; i++) {
-        if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; continue; }
-        const a = t[i] / m[i], b = t[i + 1] / m[i], h = a * a + b * b;
-        if (h > 9) { const k = 3 / Math.sqrt(h); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; }
-    }
-    let d = `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
-    for (let i = 0; i < n - 1; i++) {
-        const h = dx[i] / 3;
-        d += ` C${(pts[i][0] + h).toFixed(2)} ${(pts[i][1] + t[i] * h).toFixed(2)} ${(pts[i + 1][0] - h).toFixed(2)} ${(pts[i + 1][1] - t[i + 1] * h).toFixed(2)} ${pts[i + 1][0].toFixed(2)} ${pts[i + 1][1].toFixed(2)}`;
-    }
-    return d;
-}
 
-// Rain per 15 minutes at one gauge over the last 3 h as a smooth line (like the hourly strip's line), on the
-// same y-scale for every gauge; gaps where the gauge sent nothing. Only the SVG stretches with the card.
+// Rain per 15 minutes at one gauge over the last 3 h as bars coloured by rain strength, on the same
+// y-scale for every gauge (no bar = no rain; a gap marker where the gauge sent nothing)
 function gaugeSparkline(series, maxMm) {
     if (!series || !series.length) return '<div class="gauge-spark-empty">ไม่มีข้อมูลราย 5 นาที</div>';
-    const H = 44, TOP = 4;
-    const xp = i => (series.length === 1 ? 50 : i * 100 / (series.length - 1));
-    const yp = mm => TOP + (1 - Math.min(mm, maxMm) / maxMm) * (H - TOP);
-    let line = '', area = '', run = [];
-    const flush = () => {
-        if (run.length) {
-            const d = smoothPath(run);
-            line += d + ' ';
-            area += `${d} L${run[run.length - 1][0].toFixed(2)} ${H} L${run[0][0].toFixed(2)} ${H} Z `;
-        }
-        run = [];
-    };
-    series.forEach((b, i) => { if (b.mm === null) flush(); else run.push([xp(i), yp(b.mm)]); });
-    flush();
-    const ticks = [0, Math.floor((series.length - 1) / 2), series.length - 1].map((i, k) =>
-        `<span class="spark-tick ${['first', 'mid', 'last'][k]}" style="left:${xp(i)}%">${series[i].label}</span>`).join('');
-    return `<div class="gauge-spark" style="height:${H + 14}px">
-        <svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="height:${H}px" role="img" aria-label="ปริมาณฝนทุก 15 นาที ย้อนหลัง 3 ชม.">
-            <line x1="0" x2="100" y1="${H}" y2="${H}" class="spark-base"/>
-            <path d="${area}" class="spark-area"/><path d="${line}" class="spark-line"/>
-        </svg>${ticks}</div>`;
+    const H = 44;
+    const bars = series.map(b => {
+        if (b.mm === null) return '<div class="spark-bar-slot"><div class="spark-nodata"></div></div>';
+        const h = b.mm > 0 ? Math.max(3, Math.round(Math.min(b.mm, maxMm) / maxMm * H)) : 0;
+        return `<div class="spark-bar-slot" title="${esc(b.label)} น. · ${b.mm.toFixed(1)} มม.">${h ? `<div class="spark-bar" style="height:${h}px;background:${esc(b.color)}"></div>` : ''}</div>`;
+    }).join('');
+    const n = series.length;
+    const ticks = [0, Math.floor((n - 1) / 2), n - 1].map((i, k) =>
+        `<span class="spark-tick ${['first', 'mid', 'last'][k]}" style="left:${(i + 0.5) * 100 / n}%">${esc(series[i].label)}</span>`).join('');
+    return `<div class="gauge-spark" style="height:${H + 14}px"><div class="spark-bars" style="height:${H}px">${bars}</div>${ticks}</div>`;
 }
 
 // ===== Flood-risk box: everything computed by the server's risk section =====
@@ -1073,7 +1042,7 @@ function renderRiskSection(sec) {
     const box = document.getElementById('weatherAlertBox');
     if (!box || !sec) return;
     const d = sec.data, b = d.banner, w = d.water, g = d.gauges;
-    // One card per gauge: name, distance and a status badge, then its 15-minute rain line (shared scale)
+    // One card per gauge: name, distance and a status badge, then its 15-minute rain bars (shared scale)
     const rows = g.rows.map(r => `
                         <div class="gauge-card${r.fresh ? '' : ' gauge-old'}">
                             <div class="gauge-head">
@@ -1147,7 +1116,7 @@ function renderRiskSection(sec) {
                             </div>
                             <span class="text-[11px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60 font-semibold">กทม.${gaugeTime ? ` · ${gaugeTime} น.` : ''}</span>
                         </div>
-                        <div class="text-[11px] text-slate-400 mb-2">กราฟ: ปริมาณฝนทุก 15 นาที ย้อนหลัง 3 ชม. (ทุกสถานีสเกลเดียวกัน) · เรียงจากสถานีที่ใกล้ที่สุด</div>
+                        <div class="text-[11px] text-slate-400 mb-2">แท่ง: ปริมาณฝนทุก 15 นาที ย้อนหลัง 3 ชม. (ทุกสถานีสเกลเดียวกัน) · เรียงจากสถานีที่ใกล้ที่สุด</div>
                         <div class="gauge-list">${rows}
                         </div>
                     </div>
